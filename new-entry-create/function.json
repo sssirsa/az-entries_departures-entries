@@ -1,0 +1,39 @@
+{
+  "bindings": [
+    {
+      "authLevel": "anonymous",
+      "type": "httpTrigger",
+      "direction": "in",
+      "name": "req",
+      "methods": [
+        "post"
+      ]
+    },
+    {
+      "type": "http",
+      "direction": "out",
+      "name": "res"
+    },
+    {
+      "type": "cosmosDB",
+      "name": "entriesList",
+      "databaseName": "EntriesDepartures",
+      "collectionName": "Entries",
+      "connectionStringSetting": "entries-departures-dev_DOCUMENTDB",
+      "id": "{id}",
+      "partitionKey": "{id}",
+      "direction": "in"
+    },
+    {
+      "type": "cosmosDB",
+      "name": "newEntry",
+      "databaseName": "EntriesDepartures",
+      "collectionName": "Entries",
+      "createIfNotExists": false,
+      "connectionStringSetting": "entries-departures-dev_DOCUMENTDB",
+      "partitionKey": "{id}",
+      "direction": "out"
+    }
+  ],
+  "disabled": false
+}
