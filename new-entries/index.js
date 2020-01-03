@@ -42,6 +42,7 @@ module.exports = function (context, req) {
 
     //Get entries
     if (req.method === "GET") {
+        //TODO: Add filter for returning just the NEW FRIDGES entries
         var requestedID;
         if (req.query) {
             requestedID = req.query["id"];
