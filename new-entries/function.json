@@ -19,7 +19,7 @@
       "name": "entry",
       "databaseName": "EntriesDepartures",
       "collectionName": "Entries",
-      "connectionStringSetting": "conection_cosmosDB",
+      "connectionStringSetting": "connection_cosmosDB",
       "id": "{id}",
       "partitionKey": "{id}",
       "direction": "in"
@@ -29,8 +29,9 @@
       "name": "entries",
       "databaseName": "EntriesDepartures",
       "collectionName": "Entries",
-      "connectionStringSetting": "conection_cosmosDB",
-      "direction": "in"
+      "connectionStringSetting": "connection_cosmosDB",
+      "direction": "in",
+      "sqlQuery":"SELECT * from c where c.tipo_entrada='Nuevos'"
     },
     {
       "type": "cosmosDB",
@@ -38,7 +39,7 @@
       "databaseName": "EntriesDepartures",
       "collectionName": "Entries",
       "createIfNotExists": false,
-      "connectionStringSetting": "conection_cosmosDB",
+      "connectionStringSetting": "connection_cosmosDB",
       "partitionKey": "{id}",
       "direction": "out"
     }

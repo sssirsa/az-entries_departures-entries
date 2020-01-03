@@ -1,9 +1,11 @@
 module.exports = function (context, req) {
-    
+
     if (req.method === "GET") {
         var requestedID;
+        var requestedKind;
         if (req.query) {
             requestedID = req.query["id"];
+            requestedKind = req.query["tipo_entrada"];
         }
         if (requestedID) {
             //Get speciic entry
@@ -17,7 +19,7 @@ module.exports = function (context, req) {
             };
         }
         else {
-            //Get all entries
+            //Get entries list
             var entries = context.bindings.entries;
             context.res = {
                 status: 200,
@@ -29,7 +31,7 @@ module.exports = function (context, req) {
         }
         context.done();
     }
-    else{
+    else {
         context.res = {
             status: 405,
             body: "Method not allowed",
