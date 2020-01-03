@@ -1,0 +1,48 @@
+{
+  "bindings": [
+    {
+      "authLevel": "anonymous",
+      "type": "httpTrigger",
+      "direction": "in",
+      "name": "req",
+      "methods": [
+        "post", "get"
+      ]
+    },
+    {
+      "type": "http",
+      "direction": "out",
+      "name": "res"
+    },
+    {
+      "type": "cosmosDB",
+      "name": "entry",
+      "databaseName": "EntriesDepartures",
+      "collectionName": "Entries",
+      "connectionStringSetting": "connection_cosmosDB",
+      "id": "{id}",
+      "partitionKey": "{id}",
+      "direction": "in"
+    },
+    {
+      "type": "cosmosDB",
+      "name": "entries",
+      "databaseName": "EntriesDepartures",
+      "collectionName": "Entries",
+      "connectionStringSetting": "connection_cosmosDB",
+      "direction": "in",
+      "sqlQuery":"SELECT * from c where c.tipo_entrada='Buen estado'"
+    },
+    {
+      "type": "cosmosDB",
+      "name": "newEntry",
+      "databaseName": "EntriesDepartures",
+      "collectionName": "Entries",
+      "createIfNotExists": false,
+      "connectionStringSetting": "connection_cosmosDB",
+      "partitionKey": "{id}",
+      "direction": "out"
+    }
+  ],
+  "disabled": false
+}
