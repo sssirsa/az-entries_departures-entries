@@ -41,15 +41,31 @@ module.exports = function (context, req) {
     }
 
     //Get entries
-    if(req.method==="GET"){
-        var entries = context.bindings.entries;
-        context.res = {
-            status: 200,
-            body: entries,
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        };
+    if (req.method === "GET") {
+        var requestedID;
+        if (req.query) {
+            requestedID = req.query["id"];
+        }
+        if (requestedID) {
+            var entry = context.bindings.entry;
+            context.res = {
+                status: 200,
+                body: entry,
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            };
+        }
+        else {
+            var entries = context.bindings.entries;
+            context.res = {
+                status: 200,
+                body: entries,
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            };
+        }
         context.done();
     }
 };
