@@ -1,0 +1,39 @@
+{
+  "bindings": [
+    {
+      "authLevel": "anonymous",
+      "type": "httpTrigger",
+      "direction": "in",
+      "name": "req",
+      "methods": [
+        "post"
+      ]
+    },
+    {
+      "type": "http",
+      "direction": "out",
+      "name": "res"
+    },
+    {
+      "type": "cosmosDB",
+      "name": "entriesList",
+      "databaseName": "EntriesDepartures",
+      "collectionName": "Entries",
+      "connectionStringSetting": "AccountEndpoint=https://entries-departures-dev.documents.azure.com:443/;AccountKey=CjZr1mrbxkmxDPGRloJ31FuTqXnGvtkCWz5MgcrQRABKBrAMqZ281V0z4u0jUrEIufmS4p76rcLDQSyVoUyjRw==;",
+      "id": "{id}",
+      "partitionKey": "{id}",
+      "direction": "in"
+    },
+    {
+      "type": "cosmosDB",
+      "name": "newEntry",
+      "databaseName": "EntriesDepartures",
+      "collectionName": "Entries",
+      "createIfNotExists": false,
+      "connectionStringSetting": "AccountEndpoint=https://entries-departures-dev.documents.azure.com:443/;AccountKey=CjZr1mrbxkmxDPGRloJ31FuTqXnGvtkCWz5MgcrQRABKBrAMqZ281V0z4u0jUrEIufmS4p76rcLDQSyVoUyjRw==;",
+      "partitionKey": "{id}",
+      "direction": "out"
+    }
+  ],
+  "disabled": false
+}
