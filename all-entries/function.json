@@ -6,7 +6,8 @@
       "direction": "in",
       "name": "req",
       "methods": [
-        "post", "get"
+        "post",
+        "get"
       ]
     },
     {
@@ -30,18 +31,7 @@
       "databaseName": "EntriesDepartures",
       "collectionName": "Entries",
       "connectionStringSetting": "connection_cosmosDB",
-      "direction": "in",
-      "sqlQuery":"SELECT * from c where c.tipo_entrada='Nuevos'"
-    },
-    {
-      "type": "cosmosDB",
-      "name": "newEntry",
-      "databaseName": "EntriesDepartures",
-      "collectionName": "Entries",
-      "createIfNotExists": false,
-      "connectionStringSetting": "connection_cosmosDB",
-      "partitionKey": "{id}",
-      "direction": "out"
+      "direction": "in"
     }
   ],
   "disabled": false

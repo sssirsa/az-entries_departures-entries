@@ -31,7 +31,7 @@
       "collectionName": "Entries",
       "connectionStringSetting": "connection_cosmosDB",
       "direction": "in",
-      "sqlQuery":"SELECT * from c where c.tipo_entrada='Nuevos'"
+      "sqlQuery":"SELECT * from c where c.tipo_entrada='Punto de Venta'"
     },
     {
       "type": "cosmosDB",

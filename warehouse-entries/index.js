@@ -19,7 +19,7 @@ module.exports = function (context, req) {
             var entryString = JSON.stringify({
                 id: req.body.id,
                 fecha_hora: date_string,
-                tipo_entrada: "Nuevos"
+                tipo_entrada: "Buen estado"
             });
 
             // Write the entry to the database.
