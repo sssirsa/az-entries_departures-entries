@@ -6,7 +6,7 @@
       "direction": "in",
       "name": "req",
       "methods": [
-        "post"
+        "post", "get"
       ]
     },
     {
@@ -16,12 +16,20 @@
     },
     {
       "type": "cosmosDB",
-      "name": "entriesList",
+      "name": "entry",
       "databaseName": "EntriesDepartures",
       "collectionName": "Entries",
       "connectionStringSetting": "conection_cosmosDB",
       "id": "{id}",
       "partitionKey": "{id}",
+      "direction": "in"
+    },
+    {
+      "type": "cosmosDB",
+      "name": "entries",
+      "databaseName": "EntriesDepartures",
+      "collectionName": "Entries",
+      "connectionStringSetting": "conection_cosmosDB",
       "direction": "in"
     },
     {
