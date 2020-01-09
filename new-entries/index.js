@@ -8,6 +8,22 @@ const connection_cosmosDB = process.env["connection_cosmosDB"];
 module.exports = function (context, req) {
     //Create entry
     if (req.method === "POST") {
+        var providerId=req.body['proveedor_origen_id'];
+        var agencyId=req.body['udn_destino_id'];
+        var subsidiaryId=req.body['sucursal_destino_id'];
+        //Destination validation
+        if(agencyId && subsidiaryId){
+         context.res={
+             status:400,
+             body:{
+                message:'ES-001'   
+             },
+             headers:{
+                'Content-Type:'application/json'   
+             }
+         };
+         context.done();
+        }
             var date = new Date();
             var date_string = date.toISOString();
             // Create a JSON string.
