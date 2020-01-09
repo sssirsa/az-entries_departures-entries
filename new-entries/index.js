@@ -1,4 +1,14 @@
-nombre_choferconst mongodb = require('mongodb');
+
+         context.res={
+             status:400,
+             body:{
+                message:'ES-001'   
+             },
+             headers:{
+                'Content-Type:'application/json'   
+             }
+         };
+         context.done();nombre_choferconst mongodb = require('mongodb');
 //db connections
 let mongo_client= null;
 let cosmos_client = null;
@@ -24,6 +34,33 @@ module.exports = function (context, req) {
          };
          context.done();
         }
+        //Minimum fields validation
+        if((!providerId&&!agencyId)||(!providerId&&!subsidiaryId)){
+            context.res={
+             status:400,
+             body:{
+                message:'ES-002'   
+             },
+             headers:{
+                'Content-Type:'application/json'   
+             }
+         };
+         context.done();            
+        }
+        //Fridge array validation
+        if(req.body.cabinets_id.length===0||!req.body.cabinets_id){            
+         context.res={
+             status:400,
+             body:{
+                message:'ES-003'   
+             },
+             headers:{
+                'Content-Type:'application/json'   
+             }
+         };
+         context.done();
+        }
+        
             var date = new Date();
             var date_string = date.toISOString();
             // Create a JSON string.
@@ -147,7 +184,7 @@ module.exports = function (context, req) {
                     }
                 );
         });
-    }
+err    }
 
     function getEntries(query) {
         return new Promise(function (resolve, reject) {
@@ -174,7 +211,63 @@ module.exports = function (context, req) {
                         if (error) {
                             reject(error);
                         }
-                        resolve(docs);
+                var err;
+                //Validations
+                if(!docs['nuevo']){
+                    //Not new fridge
+                    err={
+                    status:400,
+                    body:{
+                        message:'ES-004'   
+                    },
+                    headers:{
+                        'Content-Type:'application/json'   
+                    }
+                };
+                reject(err);
+                }
+                if(docs['establecimiento']){
+                    //Fridge is in a store
+                    err={
+                    status:400,
+                    body:{
+                        message:'ES-005'   
+                    },
+                    headers:{
+                        'Content-Type:'application/json'   
+                    }
+                };
+                reject(err);
+                }
+                if(docs['sucursal']||docs['udn]){
+                    //Fridge located in any subsidiary or agency
+                    err={
+                    status:400,
+                    body:{
+                        message:'ES-006'   
+                    },
+                    headers:{
+                        'Content-Type:'application/json'   
+                    }
+                };                
+                reject(err);
+                }
+                if(docs.estatus_unilever){
+                    if(docs.estatus_unilever['code']!=="0001"){
+                    //Not new fridge
+                    err={
+                    status:400,
+                    body:{
+                        message:'ES-007'   
+                    },
+                    headers:{
+                        'Content-Type:'application/json'   
+                    }
+                };
+                reject(err);
+                }
+                //Resolve correctly if all validations are passed        
+                resolve(docs);
                     }
                 );
         });
