@@ -1,16 +1,6 @@
-
-         context.res={
-             status:400,
-             body:{
-                message:'ES-001'   
-             },
-             headers:{
-                'Content-Type:'application/json'   
-             }
-         };
-         context.done();nombre_choferconst mongodb = require('mongodb');
+const mongodb = require('mongodb');
 //db connections
-let mongo_client= null;
+let mongo_client = null;
 let cosmos_client = null;
 const connection_mongoDB = process.env["connection_mongoDB"];
 const connection_cosmosDB = process.env["connection_cosmosDB"];
@@ -18,71 +8,69 @@ const connection_cosmosDB = process.env["connection_cosmosDB"];
 module.exports = function (context, req) {
     //Create entry
     if (req.method === "POST") {
-        var providerId=req.body['proveedor_origen_id'];
-        var agencyId=req.body['udn_destino_id'];
-        var subsidiaryId=req.body['sucursal_destino_id'];
+        var providerId = req.body['proveedor_origen_id'];
+        var agencyId = req.body['udn_destino_id'];
+        var subsidiaryId = req.body['sucursal_destino_id'];
         //Destination validation
-        if(agencyId && subsidiaryId){
-         context.res={
-             status:400,
-             body:{
-                message:'ES-001'   
-             },
-             headers:{
-                'Content-Type:'application/json'   
-             }
-         };
-         context.done();
-        }
-        //Minimum fields validation
-        if((!providerId&&!agencyId)||(!providerId&&!subsidiaryId)){
-            context.res={
-             status:400,
-             body:{
-                message:'ES-002'   
-             },
-             headers:{
-                'Content-Type:'application/json'   
-             }
-         };
-         context.done();            
-        }
-        //Fridge array validation
-        if(req.body.cabinets_id.length===0||!req.body.cabinets_id){            
-         context.res={
-             status:400,
-             body:{
-                message:'ES-003'   
-             },
-             headers:{
-                'Content-Type:'application/json'   
-             }
-         };
-         context.done();
-        }
-        
-            var date = new Date();
-            var date_string = date.toISOString();
-            // Create a JSON string.
-            var entryString = JSON.stringify({
-                id: req.body.id,
-                descripcion:req.body.descripcion,
-                fecha_hora: date_string,
-                tipo_entrada: "Nuevos",
-                nombre_chofer:req.body.nombre_chofer
-            });
-
-            // Write the entry to the database.
-            context.bindings.newEntry = entryString;
-
+        if (agencyId && subsidiaryId) {
             context.res = {
-                status: 200,
-                body: entryString,
+                status: 400,
+                body: {
+                    message: 'ES-001'
+                },
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application / json'
                 }
             };
-        
+            context.done();
+        }
+
+        //Minimum fields validation
+        if ((!providerId && !agencyId) || (!providerId && !subsidiaryId)) {
+            context.res = {
+                status: 400,
+                body: {
+                    message: 'ES-002'
+                },
+                headers: {
+                    'Content-Type': 'application / json'
+                }
+            };
+            context.done();
+        }
+
+        //Fridge array validation
+        if (req.body.cabinets_id.length === 0 || !req.body.cabinets_id) {
+            context.res = {
+                status: 400,
+                body: {
+                    message: 'ES-003'
+                },
+                headers: {
+                    'Content-Type': 'application / json'
+                }
+            };
+            context.done();
+        }
+        var date = new Date();
+        var date_string = date.toISOString();
+        // Create a JSON string.
+        var entryString = JSON.stringify({
+            id: req.body.id,
+            descripcion: req.body.descripcion,
+            fecha_hora: date_string,
+            tipo_entrada: "Nuevos",
+            nombre_chofer: req.body.nombre_chofer
+        });
+        // Write the entry to the database.
+        context.bindings.newEntry = entryString;
+        context.res = {
+            status: 200,
+            body: entryString,
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        };
         context.done();
     }
 
@@ -95,15 +83,15 @@ module.exports = function (context, req) {
         }
         if (requestedID) {
             //Get specific entry
-             createCosmosClient()
+            createCosmosClient()
                 .then(function () {
                     getEntry(requestedID)
                         .then(function (entry) {
                             context.res = {
                                 status: 200,
                                 body: entry,
-                                headers:{
-                                    'Content-Type':'application/json'
+                                headers: {
+                                    'Content-Type': 'application/json'
                                 }
                             };
                             context.done();
@@ -122,6 +110,7 @@ module.exports = function (context, req) {
                     context.done();
                 });
         }
+
         else {
             //Get entries list
             createCosmosClient()
@@ -130,8 +119,8 @@ module.exports = function (context, req) {
                         .then(function (entriesList) {
                             context.res = {
                                 body: entriesList,
-                                headers:{
-                                    'Content-Type':'application/json'
+                                headers: {
+                                    'Content-Type': 'application/json'
                                 }
                             };
                             context.done();
@@ -152,7 +141,7 @@ module.exports = function (context, req) {
         }
         context.done();
     }
-    
+
     function createCosmosClient() {
         return new Promise(function (resolve, reject) {
             if (!cosmos_client) {
@@ -168,7 +157,7 @@ module.exports = function (context, req) {
                 resolve();
             }
         });
-    }    
+    }
 
     function getEntry(entryId) {
         return new Promise(function (resolve, reject) {
@@ -184,7 +173,8 @@ module.exports = function (context, req) {
                     }
                 );
         });
-err    }
+        err
+    }
 
     function getEntries(query) {
         return new Promise(function (resolve, reject) {
@@ -199,7 +189,7 @@ err    }
                     resolve(docs)
                 });
         });
-    }   
+    }
 
     function searchFridge(fridgeInventoryNumber) {
         return new Promise(function (resolve, reject) {
@@ -211,66 +201,66 @@ err    }
                         if (error) {
                             reject(error);
                         }
-                var err;
-                //Validations
-                if(!docs['nuevo']){
-                    //Not new fridge
-                    err={
-                    status:400,
-                    body:{
-                        message:'ES-004'   
-                    },
-                    headers:{
-                        'Content-Type:'application/json'   
-                    }
-                };
-                reject(err);
-                }
-                if(docs['establecimiento']){
-                    //Fridge is in a store
-                    err={
-                    status:400,
-                    body:{
-                        message:'ES-005'   
-                    },
-                    headers:{
-                        'Content-Type:'application/json'   
-                    }
-                };
-                reject(err);
-                }
-                if(docs['sucursal']||docs['udn]){
-                    //Fridge located in any subsidiary or agency
-                    err={
-                    status:400,
-                    body:{
-                        message:'ES-006'   
-                    },
-                    headers:{
-                        'Content-Type:'application/json'   
-                    }
-                };                
-                reject(err);
-                }
-                if(docs.estatus_unilever){
-                    if(docs.estatus_unilever['code']!=="0001"){
-                    //Not new fridge
-                    err={
-                    status:400,
-                    body:{
-                        message:'ES-007'   
-                    },
-                    headers:{
-                        'Content-Type:'application/json'   
-                    }
-                };
-                reject(err);
-                }
-                //Resolve correctly if all validations are passed        
-                resolve(docs);
+                        var err;
+                        //Validations
+                        if (!docs['nuevo']) {
+                            //Not new fridge
+                            err = {
+                                status: 400,
+                                body: {
+                                    message: 'ES-004'
+                                },
+                                headers: {
+                                    'Content-Type': 'application / json'
+                                }
+                            };
+                            reject(err);
+                        }
+                        if (docs['establecimiento']) {
+                            //Fridge is in a store
+                            err = {
+                                status: 400,
+                                body: {
+                                    message: 'ES-005'
+                                },
+                                headers: {
+                                    'Content-Type': 'application / json'
+                                }
+                            };
+                            reject(err);
+                        }
+                        if (docs['sucursal'] || docs['udn']) {
+                            //Fridge located in any subsidiary or agency
+                            err = {
+                                status: 400,
+                                body: {
+                                    message: 'ES-006'
+                                },
+                                headers: {
+                                    'Content-Type': 'application / json'
+                                }
+                            };
+                            reject(err);
+                        }
+                        if (docs.estatus_unilever) {
+                            if (docs.estatus_unilever['code'] !== "0001") {
+                                //Not new fridge
+                                err = {
+                                    status: 400,
+                                    body: {
+                                        message: 'ES-007'
+                                    },
+                                    headers: {
+                                        'Content-Type': 'application / json'
+                                    }
+                                };
+                                reject(err);
+                            }
+                        }
+                        //Resolve correctly if all validations are passed        
+                        resolve(docs);
                     }
                 );
         });
     }
-    
 };
