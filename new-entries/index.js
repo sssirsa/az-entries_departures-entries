@@ -1,4 +1,4 @@
-const mongodb = require('mongodb');
+nombre_choferconst mongodb = require('mongodb');
 //db connections
 let mongo_client= null;
 let cosmos_client = null;
@@ -13,8 +13,10 @@ module.exports = function (context, req) {
             // Create a JSON string.
             var entryString = JSON.stringify({
                 id: req.body.id,
+                descripcion:req.body.descripcion,
                 fecha_hora: date_string,
-                tipo_entrada: "Nuevos"
+                tipo_entrada: "Nuevos",
+                nombre_chofer:req.body.nombre_chofer
             });
 
             // Write the entry to the database.
@@ -144,5 +146,22 @@ module.exports = function (context, req) {
                     resolve(docs)
                 });
         });
-    }    
+    }   
+
+    function searchFridge(fridgeInventoryNumber) {
+        return new Promise(function (resolve, reject) {
+            mongo_client
+                .db('sssirsa')
+                .collection('fridges')
+                .findOne({ economico: fridgeInventoryNumber },
+                    function (error, docs) {
+                        if (error) {
+                            reject(error);
+                        }
+                        resolve(docs);
+                    }
+                );
+        });
+    }
+    
 };
