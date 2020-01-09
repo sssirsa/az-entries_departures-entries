@@ -1,4 +1,4 @@
-onst mongodb = require('mongodb');
+const mongodb = require('mongodb');
 //db connections
 let mongo_client = null;
 let cosmos_client = null;
