@@ -6,8 +6,15 @@ const connection_mongoDB = process.env["connection_mongoDB"];
 const connection_cosmosDB = process.env["connection_cosmosDB"];
 
 module.exports = function (context, req) {
-
-    if (req.method === "GET") {
+    switch (req.method) {
+        case "GET":
+            GET_entries();
+            break;
+        default:
+            notAllowed();
+            break;
+    }
+    function GET_entries() {
         var requestedID;
         var requestedKind;
         if (req.query) {
@@ -16,15 +23,15 @@ module.exports = function (context, req) {
         }
         if (requestedID) {
             //Get specific entry
-             createCosmosClient()
+            createCosmosClient()
                 .then(function () {
                     getEntry(requestedID)
                         .then(function (entry) {
                             context.res = {
                                 status: 200,
                                 body: entry,
-                                headers:{
-                                    'Content-Type':'application/json'
+                                headers: {
+                                    'Content-Type': 'application/json'
                                 }
                             };
                             context.done();
@@ -38,12 +45,9 @@ module.exports = function (context, req) {
 
                 })
                 .catch(function (error) {
-                    context.log('Error creating cosmos_client for  detail');
-
+                    context.log('Error creating cosmos_client for entry detail');
                     context.log(error);
-
                     context.res = { status: 500, body: error };
-
                     context.done();
 
                 });
@@ -56,8 +60,8 @@ module.exports = function (context, req) {
                         .then(function (entriesList) {
                             context.res = {
                                 body: entriesList,
-                                headers:{
-                                    'Content-Type':'application/json'
+                                headers: {
+                                    'Content-Type': 'application/json'
                                 }
                             };
                             context.done();
@@ -76,9 +80,9 @@ module.exports = function (context, req) {
                     context.done();
                 });
         }
-        context.done();
     }
-    else {
+
+    function notAllowed() {
         context.res = {
             status: 405,
             body: "Method not allowed",
@@ -88,7 +92,7 @@ module.exports = function (context, req) {
         };
         context.done();
     }
-    
+
     function createCosmosClient() {
         return new Promise(function (resolve, reject) {
             if (!cosmos_client) {
@@ -105,7 +109,7 @@ module.exports = function (context, req) {
             }
         });
     }
-    
+
     function getEntry(entryId) {
         return new Promise(function (resolve, reject) {
             cosmos_client
@@ -136,5 +140,5 @@ module.exports = function (context, req) {
                 });
         });
     }
-    
+
 };
