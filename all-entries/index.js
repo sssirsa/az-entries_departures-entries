@@ -56,7 +56,7 @@ module.exports = function (context, req) {
             //Get entries list
             createCosmosClient()
                 .then(function () {
-                    getEntries()
+                    getEntries(requestedKind)
                         .then(function (entriesList) {
                             context.res = {
                                 body: entriesList,

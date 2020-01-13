@@ -4,15 +4,30 @@ let mongo_client = null;
 let cosmos_client = null;
 const connection_mongoDB = process.env["connection_mongoDB"];
 const connection_cosmosDB = process.env["connection_cosmosDB"];
+const MONGO_DB_NAME = process.env['MONGO_DB_NAME'];
 
 module.exports = function (context, req) {
+    switch (req.method) {
+        case "GET":
+            GET_entries();
+            break;
+        case "POST":
+            POST_entry();
+            break;
+        default:
+            notAllowed();
+            break;
+    }
     //Create entry
-    if (req.method === "POST") {
+    function POST_entry() {
         var providerId = req.body['proveedor_origen_id'];
         var agencyId = req.body['udn_destino_id'];
         var subsidiaryId = req.body['sucursal_destino_id'];
+        var transportDriverId = req.body['operador_transporte_id'];
+        var transportKindId = req.body['tipo_transporte_id']; //Non mandatory
         //Destination validation
         if (agencyId && subsidiaryId) {
+            //no both
             context.res = {
                 status: 400,
                 body: {
@@ -25,8 +40,8 @@ module.exports = function (context, req) {
             context.done();
         }
 
-        //Minimum fields validation
-        if ((!providerId && !agencyId) || (!providerId && !subsidiaryId)) {
+        if (!agencyId && !subsidiaryId) {
+            //at least one
             context.res = {
                 status: 400,
                 body: {
@@ -39,8 +54,22 @@ module.exports = function (context, req) {
             context.done();
         }
 
+        //Origin validation        
+        if (!providerId) {
+            //at least one
+            context.res = {
+                status: 400,
+                body: {
+                    message: 'ES-052'
+                },
+                headers: {
+                    'Content-Type': 'application / json'
+                }
+            };
+            context.done();
+        }
         //Fridge array validation
-        if (req.body.cabinets_id.length === 0 || !req.body.cabinets_id) {
+        if (!req.body.cabinets_id) {
             context.res = {
                 status: 400,
                 body: {
@@ -52,30 +81,272 @@ module.exports = function (context, req) {
             };
             context.done();
         }
+        if (req.body.cabinets_id.length === 0) {
+            context.res = {
+                status: 400,
+                body: {
+                    message: 'ES-003'
+                },
+                headers: {
+                    'Content-Type': 'application / json'
+                }
+            };
+            context.done();
+        }
+
+        //Transport driver validation
+        if (req.body.nombre_chofer && transportDriverId) {
+            context.res = {
+                status: 400,
+                body: {
+                    message: 'ES-047'
+                },
+                headers: {
+                    'Content-Type': 'application / json'
+                }
+            };
+            context.done();
+        }
+        if (!req.body.nombre_chofer && !transportDriverId) {
+            context.res = {
+                status: 400,
+                body: {
+                    message: 'ES-048'
+                },
+                headers: {
+                    'Content-Type': 'application / json'
+                }
+            };
+            context.done();
+        }
+
         var date = new Date();
         var date_string = date.toISOString();
-        // Create a JSON string.
-        var entryString = JSON.stringify({
-            id: req.body.id,
+        // Create an entry base object.
+        var entry = {
             descripcion: req.body.descripcion,
             fecha_hora: date_string,
             tipo_entrada: "Nuevos",
             nombre_chofer: req.body.nombre_chofer
-        });
-        // Write the entry to the database.
-        context.bindings.newEntry = entryString;
-        context.res = {
-            status: 200,
-            body: entryString,
-            headers: {
-                'Content-Type': 'application/json'
-            }
         };
-        context.done();
+
+        //Transport information
+        if (transportDriverId) {
+            //search driver information and add it to the entry object
+            createCosmosClient()
+                .then(function () {
+                    searchTransportDriver(transportDriverId)
+                        .then(function (transportDriver) {
+                            if (transportDriver) {
+                                entry['operador_transporte'] = transportDriver;
+                                if (transportKindId) {
+                                    //search transport kind information and add it to the entry object
+                                    createCosmosClient()
+                                        .then(function () {
+                                            searchTransportKind(transportKindId)
+                                                .then(function (transporKind) {
+                                                    if (transporKind) {
+                                                        entry['tipo_transporte'] = transporKind;
+                                                        createEntry();
+                                                    }
+                                                    else {
+                                                        context.log('No transport kind found with the given id');
+                                                        context.res = {
+                                                            status: 400,
+                                                            body: { message: "ES-050" },
+                                                            headers: {
+                                                                'Content-Type': 'application/json'
+                                                            }
+                                                        };
+                                                        context.done();
+                                                    }
+                                                })
+                                                .catch(function (error) {
+                                                    context.log('Error searching transport kind');
+                                                    context.log(error);
+                                                    context.res = { status: 500, body: error };
+                                                    context.done();
+                                                });
+                                        })
+                                        .catch(function (error) {
+                                            context.log('Error creating cosmos_client for transport kind search');
+                                            context.log(error);
+                                            context.res = { status: 500, body: error };
+                                            context.done();
+                                        });
+                                }
+                                else {
+                                    createEntry();
+                                }
+                            }
+                            else {
+                                context.log('No transport driver found with the given id');
+                                context.res = {
+                                    status: 400,
+                                    body: { message: "ES-049" },
+                                    headers: {
+                                        'Content-Type': 'application/json'
+                                    }
+                                };
+                                context.done();
+                            }
+                        })
+                        .catch(function (error) {
+                            context.log('Error searching transport driver');
+                            context.log(error);
+                            context.res = { status: 500, body: error };
+                            context.done();
+                        });
+                })
+                .catch(function (error) {
+                    context.log('Error creating cosmos_client for transport driver search');
+                    context.log(error);
+                    context.res = { status: 500, body: error };
+                    context.done();
+                });
+        }
+        else {
+            createEntry();
+        }
+
+        function createEntry() {
+            createMongoClient()
+                .then(function () {
+                    searchFridgeBrand(providerId)
+                        .then(function (fridgeBrand) {
+                            if (!fridgeBrand) {
+                                context.log('No fridge brand (provider) found with the given id');
+                                context.res = {
+                                    status: 400,
+                                    body: { message: "ES-051" },
+                                    headers: {
+                                        'Content-Type': 'application/json'
+                                    }
+                                };
+                                context.done();
+                            }
+                            //Adding fridge brand object to entry as origin provider
+                            entry['proveedor_origen'] = fridgeBrand;
+                            //Searching destination and adding it to the entry object
+                            if (agencyId) {
+                                searchAgency(agencyId)
+                                    .then(function (agency) {
+                                        //Adding agency object to entry
+                                        if (agency) {
+                                            entry['agencia_destino'] = agency;
+                                            addFridgesToEntry();
+                                        }
+                                        else {
+                                            context.log('No agency found with the given id');
+                                            context.res = {
+                                                status: 400,
+                                                body: { message: "ES-045" },
+                                                headers: {
+                                                    'Content-Type': 'application/json'
+                                                }
+                                            };
+                                            context.done();
+                                        }
+                                    })
+                                    .catch(function (error) {
+                                        context.log('Error searching agency');
+                                        context.log(error);
+                                        context.res = { status: 500, body: error };
+                                        context.done();
+                                    });
+                            }
+                            if (subsidiaryId) {
+                                searchSubsidiary(subsidiaryId)
+                                    .then(function (subsidiary) {
+                                        //Adding subsidiary object to entry
+                                        if (subsidiary) {
+                                            entry['sucursal_destino'] = subsidiary;
+                                            addFridgesToEntry();
+                                        }
+                                        else {
+                                            context.log('No subsidiary found with the given id');
+                                            context.res = {
+                                                status: 400,
+                                                body: { message: "ES-043" },
+                                                headers: {
+                                                    'Content-Type': 'application/json'
+                                                }
+                                            };
+                                            context.done();
+                                        }
+                                    })
+                                    .catch(function (error) {
+                                        context.log('Error searching subsidiary');
+                                        context.log(error);
+                                        context.res = { status: 500, body: error };
+                                        context.done();
+                                    });
+                            }
+                        })
+                        .catch(function (error) {
+                            context.log('Error searching fridge brand');
+                            context.log(error);
+                            context.res = { status: 500, body: error };
+                            context.done();
+                        });
+                })
+                .catch(function (error) {
+                    context.log('Error creating mongo_client for fridge brand search');
+                    context.log(error);
+                    context.res = { status: 500, body: error };
+                    context.done();
+                });
+        }
+
+        //Search each fridge information and then add it to the entry
+        //Validations of each fridge are made in the searchFridge function
+        function addFridgesToEntry() {
+            var fridgesPromises = [];
+            while (req.body['cabinets_id'].length) {
+                fridgesPromises.push(
+                    searchFridge(
+                        req.body['cabinets_id'].pop()
+                    )
+                );
+            }
+            //Waiting for all promises to be solved
+            Promise.all(fridgesPromises)
+                .then(function (fridgesArray) {
+                    //If all fridges are found and can enter, then they are
+                    //added to the entry object
+                    entry['cabinets'] = fridgesArray;
+                    // Write the entry to the database.
+                    writeEntry(entry)
+                        .then(function (response) {
+                            context.res = {
+                                status: 200,
+                                body: response.ops[0],
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                }
+                            };
+                            context.done();
+                        })
+                        .catch(function (error) {
+                            context.log('Error writting entry to database');
+                            context.log(error);
+                            context.res = { status: 500, body: error };
+                            context.done();
+                        });
+                })
+                .catch(function (error) {
+                    //Reject with the returned error from the searchFridge function
+                    context.log('Validation failure or error found while searching fridge');
+                    context.log(error);
+                    context.res = error;
+                    context.done();
+                });
+        }
+
     }
 
     //Get entries
-    if (req.method === "GET") {
+    function GET_entries() {
         //TODO: Add filter for returning just the NEW FRIDGES entries
         var requestedID;
         if (req.query) {
@@ -142,6 +413,23 @@ module.exports = function (context, req) {
         context.done();
     }
 
+    function createMongoClient() {
+        return new Promise(function (resolve, reject) {
+            if (!mongo_client) {
+                mongodb.MongoClient.connect(connection_mongoDB, function (error, _mongo_client) {
+                    if (error) {
+                        reject(error);
+                    }
+                    mongo_client = _mongo_client;
+                    resolve();
+                });
+            }
+            else {
+                resolve();
+            }
+        });
+    }
+
     function createCosmosClient() {
         return new Promise(function (resolve, reject) {
             if (!cosmos_client) {
@@ -173,7 +461,6 @@ module.exports = function (context, req) {
                     }
                 );
         });
-        err
     }
 
     function getEntries(query) {
@@ -194,7 +481,7 @@ module.exports = function (context, req) {
     function searchFridge(fridgeInventoryNumber) {
         return new Promise(function (resolve, reject) {
             mongo_client
-                .db('sssirsa')
+                .db(MONGO_DB_NAME)
                 .collection('fridges')
                 .findOne({ economico: fridgeInventoryNumber },
                     function (error, docs) {
@@ -203,6 +490,20 @@ module.exports = function (context, req) {
                         }
                         var err;
                         //Validations
+                        if (!docs) {
+                            //Not found fridge
+                            err = {
+                                status: 400,
+                                body: {
+                                    message: 'ES-046'
+                                },
+                                headers: {
+                                    'Content-Type': 'application / json'
+                                }
+                            };
+                            reject(err);
+                            return;
+                        }
                         if (!docs['nuevo']) {
                             //Not new fridge
                             err = {
@@ -215,6 +516,7 @@ module.exports = function (context, req) {
                                 }
                             };
                             reject(err);
+                            return;
                         }
                         if (docs['establecimiento']) {
                             //Fridge is in a store
@@ -228,6 +530,7 @@ module.exports = function (context, req) {
                                 }
                             };
                             reject(err);
+                            return;
                         }
                         if (docs['sucursal'] || docs['udn']) {
                             //Fridge located in any subsidiary or agency
@@ -241,10 +544,11 @@ module.exports = function (context, req) {
                                 }
                             };
                             reject(err);
+                            return;
                         }
                         if (docs.estatus_unilever) {
                             if (docs.estatus_unilever['code'] !== "0001") {
-                                //Not new fridge
+                                //Not new fridge, improper unilever status
                                 err = {
                                     status: 400,
                                     body: {
@@ -255,6 +559,7 @@ module.exports = function (context, req) {
                                     }
                                 };
                                 reject(err);
+                                return;
                             }
                         }
                         //Resolve correctly if all validations are passed        
@@ -263,4 +568,103 @@ module.exports = function (context, req) {
                 );
         });
     }
+
+    //Fridge brand is referred as origin provider
+    function searchFridgeBrand(fridgeBrandId) {
+        return new Promise(function (resolve, reject) {
+            mongo_client
+                .db(MONGO_DB_NAME)
+                .collection('fridgebrands')
+                .findOne({ _id: mongodb.ObjectId(fridgeBrandId) },
+                    function (error, docs) {
+                        if (error) {
+                            reject(error);
+                        }
+                        resolve(docs);
+                    }
+                );
+        });
+    }
+
+    function searchAgency(agencyId) {
+        return new Promise(function (resolve, reject) {
+            mongo_client
+                .db(MONGO_DB_NAME)
+                .collection('agencies')
+                .findOne({ _id: mongodb.ObjectId(agencyId) },
+                    function (error, docs) {
+                        if (error) {
+                            reject(error);
+                        }
+                        resolve(docs);
+                    }
+                );
+        });
+    }
+
+    function searchSubsidiary(subsidiaryId) {
+        return new Promise(function (resolve, reject) {
+            mongo_client
+                .db(MONGO_DB_NAME)
+                .collection('subsidiaries')
+                .findOne({ _id: mongodb.ObjectId(subsidiaryId) },
+                    function (error, docs) {
+                        if (error) {
+                            reject(error);
+                        }
+                        resolve(docs);
+                    }
+                );
+        });
+    }
+
+    function searchTransportDriver(transportDriverId) {
+        return new Promise(function (resolve, reject) {
+            cosmos_client
+                .db('EntriesDepartures')
+                .collection('TransportDriver')
+                .findOne({ _id: mongodb.ObjectId(transportDriverId) },
+                    function (error, docs) {
+                        if (error) {
+                            reject(error);
+                        }
+                        resolve(docs);
+                    }
+                );
+        });
+    }
+
+    function searchTransportKind(transportKindId) {
+        return new Promise(function (resolve, reject) {
+            cosmos_client
+                .db('EntriesDepartures')
+                .collection('TransportKind')
+                .findOne({ _id: mongodb.ObjectId(transportKindId) },
+                    function (error, docs) {
+                        if (error) {
+                            reject(error);
+                        }
+                        resolve(docs);
+                    }
+                );
+        });
+    }
+
+    function writeEntry(entry) {
+        // Write the entry to the database.
+        return new Promise(function (resolve, reject) {
+            cosmos_client
+                .db('EntriesDepartures')
+                .collection('Entries')
+                .insertOne(entry,
+                    function (error, docs) {
+                        if (error) {
+                            reject(error);
+                        }
+                        resolve(docs);
+                    }
+                );
+        });
+    }
+
 };
