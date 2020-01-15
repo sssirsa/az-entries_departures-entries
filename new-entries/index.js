@@ -131,6 +131,7 @@ module.exports = function (context, req) {
             fecha_hora: date_string,
             tipo_entrada: "Nuevos",
             nombre_chofer: req.body.nombre_chofer,
+            pedimento:req.body.pedimento,
             persona: null
         };
 
