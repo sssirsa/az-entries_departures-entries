@@ -20,6 +20,8 @@ module.exports = function (context, req) {
     }
     //Create entry
     function POST_entry() {
+        //TODO: Get person data trough userid and save it in the entry data
+        var userId = null;
         var providerId = req.body['proveedor_origen_id'];
         var agencyId = req.body['udn_destino_id'];
         var subsidiaryId = req.body['sucursal_destino_id'];
@@ -122,12 +124,14 @@ module.exports = function (context, req) {
 
         var date = new Date();
         var date_string = date.toISOString();
+
         // Create an entry base object.
         var entry = {
             descripcion: req.body.descripcion,
             fecha_hora: date_string,
             tipo_entrada: "Nuevos",
-            nombre_chofer: req.body.nombre_chofer
+            nombre_chofer: req.body.nombre_chofer,
+            persona: null
         };
 
         //Transport information
@@ -301,38 +305,20 @@ module.exports = function (context, req) {
         //Search each fridge information and then add it to the entry
         //Validations of each fridge are made in the searchFridge function
         function addFridgesToEntry() {
-            var fridgesPromises = [];
+            var fridgesInfoPromises = [];
             while (req.body['cabinets_id'].length) {
-                fridgesPromises.push(
+                fridgesInfoPromises.push(
                     searchFridge(
                         req.body['cabinets_id'].pop()
                     )
                 );
             }
-            //Waiting for all promises to be solved
-            Promise.all(fridgesPromises)
+            //Waiting for all fridges promises to be solved
+            Promise.all(fridgesInfoPromises)
                 .then(function (fridgesArray) {
                     //If all fridges are found and can enter, then they are
-                    //added to the entry object
-                    entry['cabinets'] = fridgesArray;
-                    // Write the entry to the database.
-                    writeEntry(entry)
-                        .then(function (response) {
-                            context.res = {
-                                status: 200,
-                                body: response.ops[0],
-                                headers: {
-                                    'Content-Type': 'application/json'
-                                }
-                            };
-                            context.done();
-                        })
-                        .catch(function (error) {
-                            context.log('Error writting entry to database');
-                            context.log(error);
-                            context.res = { status: 500, body: error };
-                            context.done();
-                        });
+                    //modified with the destination and then added to the entry object
+                    modifyFridgesInfo(fridgesArray, entry);
                 })
                 .catch(function (error) {
                     //Reject with the returned error from the searchFridge function
@@ -343,6 +329,50 @@ module.exports = function (context, req) {
                 });
         }
 
+    }
+
+    function modifyFridgesInfo(fridgesArray, entry) {
+        var fridgesPromises = [];
+        var destination = {
+            sucursal: entry['sucursal_destino'],
+            udn: entry['agencia_destino']
+        };
+        for (var i = 0; i < fridgesArray.length; i++) {
+            fridgeId = fridgesArray[i]._id;
+            fridgesPromises.push(
+                updateFridgeDestination(destination, fridgeId)
+            );
+        }
+
+        Promise.all(fridgesPromises)
+            .then(function () {
+                entry['cabinets'] = fridgesArray;
+                // Write the entry to the database.
+                writeEntry(entry)
+                    .then(function (response) {
+                        context.res = {
+                            status: 200,
+                            body: response.ops[0],
+                            headers: {
+                                'Content-Type': 'application/json'
+                            }
+                        };
+                        context.done();
+                    })
+                    .catch(function (error) {
+                        context.log('Error writting entry to database');
+                        context.log(error);
+                        context.res = { status: 500, body: error };
+                        context.done();
+                    });
+            })
+            .catch(function (error) {
+                //Reject with the returned error from the updateFridgeDestination function
+                context.log('Error writing destination information to fridge');
+                context.log(error);
+                context.res = error;
+                context.done();
+            });
     }
 
     //Get entries
@@ -657,6 +687,24 @@ module.exports = function (context, req) {
                 .db('EntriesDepartures')
                 .collection('Entries')
                 .insertOne(entry,
+                    function (error, docs) {
+                        if (error) {
+                            reject(error);
+                        }
+                        resolve(docs);
+                    }
+                );
+        });
+    }
+
+    function updateFridgeDestination(newValues, fridgeId) {
+        return new Promise(function (resolve, reject) {
+            mongo_client
+                .db(MONGO_DB_NAME)
+                .collection('fridges')
+                .updateOne(
+                    { _id: mongodb.ObjectId(fridgeId) },
+                    { $set: newValues },
                     function (error, docs) {
                         if (error) {
                             reject(error);

@@ -42,3 +42,4 @@ __pycache__/
 *.py[cod]
 *$py.class
 local.settings.dev.json
+local.settings.prod.json
