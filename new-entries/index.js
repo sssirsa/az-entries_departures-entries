@@ -350,14 +350,23 @@ module.exports = function (context, req) {
                 // Write the entry to the database.
                 writeEntry(entry)
                     .then(function (response) {
-                        context.res = {
-                            status: 200,
-                            body: response.ops[0],
-                            headers: {
-                                'Content-Type': 'application/json'
-                            }
-                        };
-                        context.done();
+                        createFridgeControl(entry._id, fridgesArray, entry.sucursal, entry.udn)
+                            .then(function () {
+                                context.res = {
+                                    status: 200,
+                                    body: response.ops[0],
+                                    headers: {
+                                        'Content-Type': 'application/json'
+                                    }
+                                };
+                                context.done();
+                            })
+                            .catch(function (error) {
+                                context.log('Error writting fridge control to database');
+                                context.log(error);
+                                context.res = { status: 500, body: error };
+                                context.done();
+                            });
                     })
                     .catch(function (error) {
                         context.log('Error writting entry to database');
@@ -705,6 +714,55 @@ module.exports = function (context, req) {
                 .updateOne(
                     { _id: mongodb.ObjectId(fridgeId) },
                     { $set: newValues },
+                    function (error, docs) {
+                        if (error) {
+                            reject(error);
+                        }
+                        resolve(docs);
+                    }
+                );
+        });
+    }
+
+    function createFridgeControl(entryId, fridgeArray, subsidiary, agency) {
+        return new Promise(function (resolve, reject) {
+            var fridgesPromises = [];
+            var element;
+            var subsidiaryId, agencyId;
+            subsidiary ? subsidiaryId = subsidiary['_id'] : subsidiaryId = null;
+            agency ? agencyId = agency['_id'] : agencyId = null;
+            for (var i = 0; i < fridgeArray.length; i++) {
+                element = {
+                    tipo_entrada: "Nuevos",
+                    cabinet_id: fridgeArray[i].economico,
+                    entrada_id: entryId,
+                    impedimento_id: null,
+                    servicio_id: null,
+                    sucursal_id: subsidiaryId,
+                    agencia_id: agencyId
+                };
+                fridgesPromises.push(
+                    writeFridgeControl(element)
+                );
+            }
+
+            Promise.all(fridgesPromises)
+                .then(function () {
+                    resolve();
+                })
+                .catch(function (error) {
+                    reject(error);
+                });
+        });
+    }
+
+    function writeFridgeControl(element) {
+        // Write the entry to the database.
+        return new Promise(function (resolve, reject) {
+            cosmos_client
+                .db('EntriesDepartures')
+                .collection('Control')
+                .insertOne(element,
                     function (error, docs) {
                         if (error) {
                             reject(error);
