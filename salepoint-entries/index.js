@@ -207,7 +207,7 @@ module.exports = function (context, req) {
                             .then(function (agency) {
                                 //Adding agency object to entry
                                 if (agency) {
-                                    entry['agencia_destino'] = agency;
+                                    entry['udn_destino'] = agency;
                                     addFridgesToEntry();
                                 }
                                 else {
@@ -298,7 +298,7 @@ module.exports = function (context, req) {
         var fridgesPromises = [];
         var destination = {
             sucursal: entry['sucursal_destino'],
-            udn: entry['agencia_destino']
+            udn: entry['udn_destino']
         };
         for (var i = 0; i < fridgesArray.length; i++) {
             fridgeId = fridgesArray[i]._id;
@@ -313,7 +313,7 @@ module.exports = function (context, req) {
                 // Write the entry to the database.
                 writeEntry(entry)
                     .then(function (response) {
-                        createFridgeControl(entry._id, fridgesArray, entry.sucursal, entry.udn)
+                        createFridgeControl(entry._id, fridgesArray, entry.sucursal_destino, entry.udn_destino)
                             .then(function () {
                                 context.res = {
                                     status: 200,
@@ -662,7 +662,7 @@ module.exports = function (context, req) {
                     impedimento_id: null,
                     servicio_id: null,
                     sucursal_id: subsidiaryId,
-                    agencia_id: agencyId
+                    udn_id: agencyId
                 };
                 fridgesPromises.push(
                     writeFridgeControl(element)
