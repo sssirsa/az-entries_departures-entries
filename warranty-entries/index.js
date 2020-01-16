@@ -624,6 +624,7 @@ module.exports = function (context, req) {
                             //Validation is overridden if no status is present
                             if (
                                 docs.estatus_unilever['code'] !== "0007"
+                                || docs.estatus_unilever['code'] !== "0003"
                                 || docs.estatus_unilever['code'] !== "0011"
                             ) {
                                 //NImproper unilever status
