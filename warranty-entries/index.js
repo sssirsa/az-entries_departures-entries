@@ -631,7 +631,7 @@ module.exports = function (context, req) {
                                 err = {
                                     status: 400,
                                     body: {
-                                        message: 'ES-007'
+                                        message: 'ES-057'
                                     },
                                     headers: {
                                         'Content-Type': 'application / json'
