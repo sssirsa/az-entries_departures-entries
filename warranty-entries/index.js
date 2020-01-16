@@ -237,7 +237,7 @@ module.exports = function (context, req) {
                             .then(function (agency) {
                                 //Adding agency object to entry
                                 if (agency) {
-                                    entry['agencia_origen'] = agency;
+                                    entry['udn_origen'] = agency;
                                     //Searching destination and adding it to the entry object
                                     if (subsidiaryId) {
                                         searchSubsidiary(subsidiaryId)
@@ -396,7 +396,7 @@ module.exports = function (context, req) {
                 // Write the entry to the database.
                 writeEntry(entry)
                     .then(function (response) {
-                        createFridgeControl(entry._id, fridgesArray, entry.sucursal, entry.udn)
+                        createFridgeControl(entry._id, fridgesArray, entry.sucursal_destino)
                             .then(function () {
                                 context.res = {
                                     status: 200,
@@ -624,13 +624,14 @@ module.exports = function (context, req) {
                             //Validation is overridden if no status is present
                             if (
                                 docs.estatus_unilever['code'] !== "0007"
+                                || docs.estatus_unilever['code'] !== "0003"
                                 || docs.estatus_unilever['code'] !== "0011"
                             ) {
                                 //NImproper unilever status
                                 err = {
                                     status: 400,
                                     body: {
-                                        message: 'ES-007'
+                                        message: 'ES-057'
                                     },
                                     headers: {
                                         'Content-Type': 'application / json'
@@ -746,13 +747,12 @@ module.exports = function (context, req) {
         });
     }
 
-    function createFridgeControl(entryId, fridgeArray, subsidiary, agency) {
+    function createFridgeControl(entryId, fridgeArray, subsidiary) {
         return new Promise(function (resolve, reject) {
             var fridgesPromises = [];
             var element;
-            var subsidiaryId, agencyId;
+            var subsidiaryId;
             subsidiary ? subsidiaryId = subsidiary['_id'] : subsidiaryId = null;
-            agency ? agencyId = agency['_id'] : agencyId = null;
             for (var i = 0; i < fridgeArray.length; i++) {
                 element = {
                     tipo_entrada: "Garantías",
@@ -761,7 +761,7 @@ module.exports = function (context, req) {
                     impedimento_id: null,
                     servicio_id: null,
                     sucursal_id: subsidiaryId,
-                    agencia_id: agencyId
+                    udn_id: agencyId
                 };
                 fridgesPromises.push(
                     writeFridgeControl(element)
