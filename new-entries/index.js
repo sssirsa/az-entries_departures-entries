@@ -131,6 +131,7 @@ module.exports = function (context, req) {
             fecha_hora: date_string,
             tipo_entrada: "Nuevos",
             nombre_chofer: req.body.nombre_chofer,
+            pedimento: req.body.pedimento,
             persona: null
         };
 
@@ -425,7 +426,7 @@ module.exports = function (context, req) {
             //Get entries list
             createCosmosClient()
                 .then(function () {
-                    getEntries()
+                    getEntries({ tipo_entrada:"Nuevos" })
                         .then(function (entriesList) {
                             context.res = {
                                 body: entriesList,
