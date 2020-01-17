@@ -291,53 +291,84 @@ module.exports = function (context, req) {
     }
 
     function modifyFridgesInfo(fridgesArray, entry) {
-        var fridgesPromises = [];
-        var destination = {
-            sucursal: entry['sucursal_destino']
-        };
-        for (var i = 0; i < fridgesArray.length; i++) {
-            fridgeId = fridgesArray[i]._id;
-            fridgesPromises.push(
-                updateFridgeDestination(destination, fridgeId)
-            );
-        }
+        searchUnileverStatus("0001")
+            .then(function (unileverStatus) {
+                if (!unileverStatus) {
+                    var error = {
+                        message: "Could not find the unilever status '0001' on the database"
+                    };
+                    //Reject with the returned error from the updateFridgeDestination function
+                    context.log('Error writing destination information to fridge');
+                    context.log(error);
+                    context.res = { status: 500, body: error };
+                    context.done();
+                }
+                var fridgesPromises = [];
+                //Destination object
+                var destination = {
+                    estatus_unilever: unileverStatus,
+                    estatus_unilever_id: unileverStatus['_id']
+                };
+                if (entry['udn_destino']) {
+                    destination.udn = entry['udn_destino'];
+                    destination.udn_id = entry['udn_destino']._id;
+                }
+                if (entry['sucursal_destino']) {
+                    destination.sucursal = entry['sucursal_destino'];
+                    destination.sucursal_id = entry['sucursal_destino']._id;
+                }
 
-        Promise.all(fridgesPromises)
-            .then(function () {
-                entry['cabinets'] = fridgesArray;
-                // Write the entry to the database.
-                writeEntry(entry)
-                    .then(function (response) {
-                        createFridgeControl(entry._id, fridgesArray, entry.sucursal_destino, entry.udn_destino)
-                            .then(function () {
-                                context.res = {
-                                    status: 200,
-                                    body: response.ops[0],
-                                    headers: {
-                                        'Content-Type': 'application/json'
-                                    }
-                                };
-                                context.done();
+                for (var i = 0; i < fridgesArray.length; i++) {
+                    fridgeId = fridgesArray[i]._id;
+                    fridgesPromises.push(
+                        updateFridgeDestination(destination, fridgeId)
+                    );
+                }
+
+                Promise.all(fridgesPromises)
+                    .then(function () {
+                        entry['cabinets'] = fridgesArray;
+                        // Write the entry to the database.
+                        writeEntry(entry)
+                            .then(function (response) {
+                                createFridgeControl(entry._id, fridgesArray, entry.sucursal_destino, entry.udn_destino)
+                                    .then(function () {
+                                        context.res = {
+                                            status: 200,
+                                            body: response.ops[0],
+                                            headers: {
+                                                'Content-Type': 'application/json'
+                                            }
+                                        };
+                                        context.done();
+                                    })
+                                    .catch(function (error) {
+                                        context.log('Error writting fridge control to database');
+                                        context.log(error);
+                                        context.res = { status: 500, body: error };
+                                        context.done();
+                                    });
                             })
                             .catch(function (error) {
-                                context.log('Error writting fridge control to database');
+                                context.log('Error writting entry to database');
                                 context.log(error);
                                 context.res = { status: 500, body: error };
                                 context.done();
                             });
                     })
                     .catch(function (error) {
-                        context.log('Error writting entry to database');
+                        //Reject with the returned error from the updateFridgeDestination function
+                        context.log('Error writing destination information to fridge');
                         context.log(error);
-                        context.res = { status: 500, body: error };
+                        context.res = error;
                         context.done();
                     });
             })
             .catch(function (error) {
                 //Reject with the returned error from the updateFridgeDestination function
-                context.log('Error writing destination information to fridge');
+                context.log('Error searching unilever status');
                 context.log(error);
-                context.res = error;
+                context.res = { status: 500, body: error };
                 context.done();
             });
     }
@@ -535,8 +566,8 @@ module.exports = function (context, req) {
                         if (docs.estatus_unilever) {
                             if (
                                 docs.estatus_unilever['code'] !== "0001"
-                                ||docs.estatus_unilever['code'] !== "0011"
-                                ) {
+                                || docs.estatus_unilever['code'] !== "0011"
+                            ) {
                                 //Improper unilever status
                                 err = {
                                     status: 400,
@@ -552,6 +583,22 @@ module.exports = function (context, req) {
                             }
                         }
                         //Resolve correctly if all validations are passed        
+                        resolve(docs);
+                    }
+                );
+        });
+    }
+
+    function searchUnileverStatus(code) {
+        return new Promise(function (resolve, reject) {
+            mongo_client
+                .db(MONGO_DB_NAME)
+                .collection('unilevers')
+                .findOne({ code: code },
+                    function (error, docs) {
+                        if (error) {
+                            reject(error);
+                        }
                         resolve(docs);
                     }
                 );
