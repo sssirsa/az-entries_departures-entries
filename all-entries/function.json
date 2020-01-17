@@ -14,24 +14,6 @@
       "type": "http",
       "direction": "out",
       "name": "res"
-    },
-    {
-      "type": "cosmosDB",
-      "name": "entry",
-      "databaseName": "EntriesDepartures",
-      "collectionName": "Entries",
-      "connectionStringSetting": "connection_cosmosDB",
-      "id": "{id}",
-      "partitionKey": "{id}",
-      "direction": "in"
-    },
-    {
-      "type": "cosmosDB",
-      "name": "entries",
-      "databaseName": "EntriesDepartures",
-      "collectionName": "Entries",
-      "connectionStringSetting": "connection_cosmosDB",
-      "direction": "in"
     }
   ],
   "disabled": false
