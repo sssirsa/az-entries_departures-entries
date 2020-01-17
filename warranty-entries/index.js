@@ -228,6 +228,7 @@ module.exports = function (context, req) {
             createEntry();
         }
 
+        //Origin and destination search
         function createEntry() {
             createMongoClient()
                 .then(function () {

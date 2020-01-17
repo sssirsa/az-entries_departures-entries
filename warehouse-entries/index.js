@@ -22,32 +22,18 @@ module.exports = function (context, req) {
     function POST_entry() {
         //TODO: Get person data trough userid and save it in the entry data
         var userId = null;
-        var providerId = req.body['proveedor_origen_id'];
-        var agencyId = req.body['udn_destino_id'];
+        var originAgencyId = req.body['udn_origen_id'];
         var subsidiaryId = req.body['sucursal_destino_id'];
         var transportDriverId = req.body['operador_transporte_id'];
         var transportKindId = req.body['tipo_transporte_id']; //Non mandatory
-        //Destination validation
-        if (agencyId && subsidiaryId) {
-            //no both
-            context.res = {
-                status: 400,
-                body: {
-                    message: 'ES-001'
-                },
-                headers: {
-                    'Content-Type': 'application / json'
-                }
-            };
-            context.done();
-        }
 
-        if (!agencyId && !subsidiaryId) {
+        //Destination validation
+        if (!subsidiaryId) {
             //at least one
             context.res = {
                 status: 400,
                 body: {
-                    message: 'ES-002'
+                    message: 'ES-013'
                 },
                 headers: {
                     'Content-Type': 'application / json'
@@ -57,12 +43,12 @@ module.exports = function (context, req) {
         }
 
         //Origin validation        
-        if (!providerId) {
+        if (!originAgencyId) {
             //at least one
             context.res = {
                 status: 400,
                 body: {
-                    message: 'ES-052'
+                    message: 'ES-009'
                 },
                 headers: {
                     'Content-Type': 'application / json'
@@ -98,6 +84,7 @@ module.exports = function (context, req) {
 
         //Transport driver validation
         if (req.body.nombre_chofer && transportDriverId) {
+            //Not both
             context.res = {
                 status: 400,
                 body: {
@@ -110,6 +97,7 @@ module.exports = function (context, req) {
             context.done();
         }
         if (!req.body.nombre_chofer && !transportDriverId) {
+            //At least one
             context.res = {
                 status: 400,
                 body: {
@@ -131,7 +119,6 @@ module.exports = function (context, req) {
             fecha_hora: date_string,
             tipo_entrada: "Buen estado",
             nombre_chofer: req.body.nombre_chofer,
-            pedimento: req.body.pedimento,
             persona: null
         };
 
@@ -214,89 +201,60 @@ module.exports = function (context, req) {
             createEntry();
         }
 
+        //Origin and destination search
         function createEntry() {
             createMongoClient()
                 .then(function () {
-                    searchFridgeBrand(providerId)
-                        .then(function (fridgeBrand) {
-                            if (!fridgeBrand) {
-                                context.log('No fridge brand (provider) found with the given id');
+                    searchAgency(originAgencyId)
+                        .then(function (agency) {
+                            if (!agency) {
+                                context.log('No agency found with the given id');
                                 context.res = {
                                     status: 400,
-                                    body: { message: "ES-051" },
+                                    body: { message: "ES-045" },
                                     headers: {
                                         'Content-Type': 'application/json'
                                     }
                                 };
                                 context.done();
                             }
-                            //Adding fridge brand object to entry as origin provider
-                            entry['proveedor_origen'] = fridgeBrand;
-                            //Searching destination and adding it to the entry object
-                            if (agencyId) {
-                                searchAgency(agencyId)
-                                    .then(function (agency) {
-                                        //Adding agency object to entry
-                                        if (agency) {
-                                            entry['udn_destino'] = agency;
-                                            addFridgesToEntry();
-                                        }
-                                        else {
-                                            context.log('No agency found with the given id');
-                                            context.res = {
-                                                status: 400,
-                                                body: { message: "ES-045" },
-                                                headers: {
-                                                    'Content-Type': 'application/json'
-                                                }
-                                            };
-                                            context.done();
-                                        }
-                                    })
-                                    .catch(function (error) {
-                                        context.log('Error searching agency');
-                                        context.log(error);
-                                        context.res = { status: 500, body: error };
+                            //Adding agency object to entry as origin
+                            entry['udn_origen'] = agency;
+                            searchSubsidiary(subsidiaryId)
+                                .then(function (subsidiary) {
+                                    //Adding subsidiary object to entry
+                                    if (subsidiary) {
+                                        entry['sucursal_destino'] = subsidiary;
+                                        addFridgesToEntry();
+                                    }
+                                    else {
+                                        context.log('No subsidiary found with the given id');
+                                        context.res = {
+                                            status: 400,
+                                            body: { message: "ES-043" },
+                                            headers: {
+                                                'Content-Type': 'application/json'
+                                            }
+                                        };
                                         context.done();
-                                    });
-                            }
-                            if (subsidiaryId) {
-                                searchSubsidiary(subsidiaryId)
-                                    .then(function (subsidiary) {
-                                        //Adding subsidiary object to entry
-                                        if (subsidiary) {
-                                            entry['sucursal_destino'] = subsidiary;
-                                            addFridgesToEntry();
-                                        }
-                                        else {
-                                            context.log('No subsidiary found with the given id');
-                                            context.res = {
-                                                status: 400,
-                                                body: { message: "ES-043" },
-                                                headers: {
-                                                    'Content-Type': 'application/json'
-                                                }
-                                            };
-                                            context.done();
-                                        }
-                                    })
-                                    .catch(function (error) {
-                                        context.log('Error searching subsidiary');
-                                        context.log(error);
-                                        context.res = { status: 500, body: error };
-                                        context.done();
-                                    });
-                            }
+                                    }
+                                })
+                                .catch(function (error) {
+                                    context.log('Error searching subsidiary');
+                                    context.log(error);
+                                    context.res = { status: 500, body: error };
+                                    context.done();
+                                });
                         })
                         .catch(function (error) {
-                            context.log('Error searching fridge brand');
+                            context.log('Error searching agency');
                             context.log(error);
                             context.res = { status: 500, body: error };
                             context.done();
                         });
                 })
                 .catch(function (error) {
-                    context.log('Error creating mongo_client for fridge brand search');
+                    context.log('Error creating mongo_client for origin and destination search');
                     context.log(error);
                     context.res = { status: 500, body: error };
                     context.done();
@@ -335,8 +293,7 @@ module.exports = function (context, req) {
     function modifyFridgesInfo(fridgesArray, entry) {
         var fridgesPromises = [];
         var destination = {
-            sucursal: entry['sucursal_destino'],
-            udn: entry['udn_destino']
+            sucursal: entry['sucursal_destino']
         };
         for (var i = 0; i < fridgesArray.length; i++) {
             fridgeId = fridgesArray[i]._id;
@@ -426,7 +383,7 @@ module.exports = function (context, req) {
             //Get entries list
             createCosmosClient()
                 .then(function () {
-                    getEntries({ tipo_entrada:"Buen estado" })
+                    getEntries({ tipo_entrada: "Buen estado" })
                         .then(function (entriesList) {
                             context.res = {
                                 body: entriesList,
@@ -544,20 +501,6 @@ module.exports = function (context, req) {
                             reject(err);
                             return;
                         }
-                        if (!docs['nuevo']) {
-                            //Not new fridge
-                            err = {
-                                status: 400,
-                                body: {
-                                    message: 'ES-004'
-                                },
-                                headers: {
-                                    'Content-Type': 'application / json'
-                                }
-                            };
-                            reject(err);
-                            return;
-                        }
                         if (docs['establecimiento']) {
                             //Fridge is in a store
                             err = {
@@ -572,8 +515,11 @@ module.exports = function (context, req) {
                             reject(err);
                             return;
                         }
-                        if (docs['sucursal'] || docs['udn']) {
+                        //if (docs['sucursal'] || docs['udn']) {
+                        if (docs['sucursal']) {
+                            //Agency validation overriden due to implementation
                             //Fridge located in any subsidiary or agency
+                            //TODO: validate no agency in fridge, after implementation has been finished
                             err = {
                                 status: 400,
                                 body: {
@@ -587,8 +533,11 @@ module.exports = function (context, req) {
                             return;
                         }
                         if (docs.estatus_unilever) {
-                            if (docs.estatus_unilever['code'] !== "0001") {
-                                //Not new fridge, improper unilever status
+                            if (
+                                docs.estatus_unilever['code'] !== "0001"
+                                ||docs.estatus_unilever['code'] !== "0011"
+                                ) {
+                                //Improper unilever status
                                 err = {
                                     status: 400,
                                     body: {
@@ -603,23 +552,6 @@ module.exports = function (context, req) {
                             }
                         }
                         //Resolve correctly if all validations are passed        
-                        resolve(docs);
-                    }
-                );
-        });
-    }
-
-    //Fridge brand is referred as origin provider
-    function searchFridgeBrand(fridgeBrandId) {
-        return new Promise(function (resolve, reject) {
-            mongo_client
-                .db(MONGO_DB_NAME)
-                .collection('fridgebrands')
-                .findOne({ _id: mongodb.ObjectId(fridgeBrandId) },
-                    function (error, docs) {
-                        if (error) {
-                            reject(error);
-                        }
                         resolve(docs);
                     }
                 );
