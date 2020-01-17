@@ -326,7 +326,7 @@ module.exports = function (context, req) {
                     //Reject with the returned error from the searchFridge function
                     context.log('Validation failure or error found while searching fridge');
                     context.log(error);
-                    context.res = error;
+                    context.res = {status:500, body:error};
                     context.done();
                 });
         }
@@ -339,13 +339,12 @@ module.exports = function (context, req) {
             .then(function (unileverStatus) {
                 if (!unileverStatus) {
                     var error = {
-                        status: 500,
-                        body: "Could not find the unilever status '0001' on the database"
+                        message: "Could not find the unilever status '0001' on the database"
                     };
                     //Reject with the returned error from the updateFridgeDestination function
                     context.log('Error writing destination information to fridge');
                     context.log(error);
-                    context.res = error;
+                    context.res = {status:500, body:error};
                     context.done();
                 }
                 var fridgesPromises = [];
@@ -360,7 +359,7 @@ module.exports = function (context, req) {
                 }
                 if (entry['sucursal_destino']) {
                     destination.sucursal = entry['sucursal_destino'];
-                        destination.sucursal_id = entry['sucursal_destino']._id;
+                    destination.sucursal_id = entry['sucursal_destino']._id;
                 }
 
                 for (var i = 0; i < fridgesArray.length; i++) {
