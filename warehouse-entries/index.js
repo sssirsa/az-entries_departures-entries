@@ -566,7 +566,7 @@ module.exports = function (context, req) {
                         if (docs.estatus_unilever) {
                             if (
                                 docs.estatus_unilever['code'] !== "0001"
-                                || docs.estatus_unilever['code'] !== "0011"
+                                && docs.estatus_unilever['code'] !== "0011"
                             ) {
                                 //Improper unilever status
                                 err = {

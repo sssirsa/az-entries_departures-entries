@@ -554,9 +554,9 @@ module.exports = function (context, req) {
                         if (docs.estatus_unilever) {
                             if (
                                 docs.estatus_unilever['code'] !== "0002"
-                                || docs.estatus_unilever['code'] !== "0005"
-                                || docs.estatus_unilever['code'] !== "0009"
-                                || docs.estatus_unilever['code'] !== "0011"
+                                && docs.estatus_unilever['code'] !== "0005"
+                                && docs.estatus_unilever['code'] !== "0009"
+                                && docs.estatus_unilever['code'] !== "0011"
                             ) {
                                 //Not new fridge, improper unilever status
                                 err = {
