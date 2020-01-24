@@ -381,7 +381,7 @@ module.exports = function (context, req) {
 
     function modifyFridgesInfo(fridgesArray, entry) {
         //Getting unilever status
-        searchUnileverStatus("0001")
+        searchUnileverStatus("0003")
             .then(function (unileverStatus) {
                 var fridgesPromises = [];
                 
