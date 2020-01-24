@@ -43,3 +43,4 @@ __pycache__/
 *$py.class
 local.settings.dev.json
 local.settings.prod.json
+package-lock.json

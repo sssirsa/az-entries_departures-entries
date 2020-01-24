@@ -381,6 +381,7 @@ module.exports = function (context, req) {
 
     function modifyFridgesInfo(fridgesArray, entry) {
         //Getting unilever status
+        //Modofy to proper status 0003 when service functionality is implemented 
         searchUnileverStatus("0001")
             .then(function (unileverStatus) {
                 var fridgesPromises = [];
@@ -649,8 +650,8 @@ module.exports = function (context, req) {
                             //Validation is overridden if no status is present
                             if (
                                 docs.estatus_unilever['code'] !== "0007"
-                                || docs.estatus_unilever['code'] !== "0003"
-                                || docs.estatus_unilever['code'] !== "0011"
+                                && docs.estatus_unilever['code'] !== "0003"
+                                && docs.estatus_unilever['code'] !== "0011"
                             ) {
                                 //NImproper unilever status
                                 err = {

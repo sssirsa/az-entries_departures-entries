@@ -296,11 +296,12 @@ module.exports = function (context, req) {
     }
 
     function modifyFridgesInfo(fridgesArray, entry) {//Getting unilever status
-        searchUnileverStatus("0003")
+        //Change to proper status 0003 when service functionality is implemented
+        searchUnileverStatus("0001")
             .then(function (unileverStatus) {
                 if (!unileverStatus) {
                     var error = {
-                        message: "Could not find the unilever status '0001' on the database"
+                        message: "Could not find the unilever status '0003' on the database"
                     };
                     //Reject with the returned error from the updateFridgeDestination function
                     context.log('Error writing destination information to fridge');
@@ -554,9 +555,9 @@ module.exports = function (context, req) {
                         if (docs.estatus_unilever) {
                             if (
                                 docs.estatus_unilever['code'] !== "0002"
-                                || docs.estatus_unilever['code'] !== "0005"
-                                || docs.estatus_unilever['code'] !== "0009"
-                                || docs.estatus_unilever['code'] !== "0011"
+                                && docs.estatus_unilever['code'] !== "0005"
+                                && docs.estatus_unilever['code'] !== "0009"
+                                && docs.estatus_unilever['code'] !== "0011"
                             ) {
                                 //Not new fridge, improper unilever status
                                 err = {
