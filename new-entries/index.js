@@ -459,7 +459,8 @@ module.exports = function (context, req) {
             //Get entries list
             createCosmosClient()
                 .then(function () {
-                    getEntries({ tipo_entrada: "Nuevos" })
+                    context.log("created cosmos");
+                    getEntries({tipo_entrada: "Nuevos"})
                         .then(function (entriesList) {
                             context.res = {
                                 body: entriesList,
@@ -483,7 +484,6 @@ module.exports = function (context, req) {
                     context.done();
                 });
         }
-        context.done();
     }
 
     function createMongoClient() {
@@ -543,6 +543,10 @@ module.exports = function (context, req) {
                 .collection('Entries')
                 .find(query)
                 .toArray(function (error, docs) {
+                    context.log("error");
+                    context.log(error);
+                    context.log("docs");
+                    context.log(docs);
                     if (error) {
                         reject(error);
                     }
