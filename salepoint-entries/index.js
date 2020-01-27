@@ -444,7 +444,6 @@ module.exports = function (context, req) {
                     context.done();
                 });
         }
-        context.done();
     }
 
     function createMongoClient() {
