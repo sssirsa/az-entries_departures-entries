@@ -1,6 +1,6 @@
 const mongodb = require('mongodb');
 const axios = require('axios');
-const entry_kind = "Punto de venta";
+const entry_kind = "Buen estado";
 //db connections
 let cosmos_client = null;
 let mongo_client = null;
