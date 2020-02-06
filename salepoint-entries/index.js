@@ -34,10 +34,10 @@ module.exports = function (context, req) {
     function POST_entry() {
         //TODO: Get person data trough userid and save it in the entry data
         var userId = null;
-        var agencyId = req.body['udn_destino_id'];
-        var subsidiaryId = req.body['sucursal_destino_id'];
-        var transportDriverId = req.body['operador_transporte_id'];
-        var transportKindId = req.body['tipo_transporte_id']; //Non mandatory
+        var agencyId = req.body['udn_destino'];
+        var subsidiaryId = req.body['sucursal_destino'];
+        var transportDriverId = req.body['operador_transporte'];
+        var transportKindId = req.body['tipo_transporte']; //Non mandatory
         //Destination validation
         if (agencyId && subsidiaryId) {
             //no both
