@@ -2,7 +2,7 @@ const mongodb = require('mongodb');
 const axios = require('axios');
 const entry_kind = "Nuevos";
 //db connections
-let manamagement_client = null;
+let management_client = null;
 let entries_departures_client = null;
 const connection_Management = process.env["connection_Management"];
 const connection_EntriesDepartures = process.env["connection_EntriesDepartures"];
@@ -110,13 +110,7 @@ module.exports = function (context, req) {
             }
             catch (error) {
                 context.log(error);
-                context.res = {
-                    status: 500,
-                    body: error.toString(),
-                    headers: {
-                        'Content-Type': 'application / json'
-                    }
-                };
+                context.res = error;
                 context.done();
             }
         }
@@ -222,7 +216,7 @@ module.exports = function (context, req) {
             await createManagementClient();
             return new Promise(function (resolve, reject) {
                 try {
-                    mongo_client
+                    management_client
                         .db(MANAGEMENT_DB_NAME)
                         .collection('agencies')
                         .findOne({ _id: mongodb.ObjectId(agencyId) },
@@ -268,7 +262,7 @@ module.exports = function (context, req) {
             await createManagementClient();
             return new Promise(function (resolve, reject) {
                 try {
-                    manamagement_client
+                    management_client
                         .db(MANAGEMENT_DB_NAME)
                         .collection('subsidiaries')
                         .findOne({ _id: mongodb.ObjectId(subsidiaryId) },
@@ -334,7 +328,7 @@ module.exports = function (context, req) {
             await createManagementClient();
             return new Promise(function (resolve, reject) {
                 try {
-                    mongo_client
+                    management_client
                         .db(MANAGEMENT_DB_NAME)
                         .collection('fridges')
                         .findOne({ economico: fridgeInventoryNumber },
@@ -439,7 +433,7 @@ module.exports = function (context, req) {
             await createManagementClient();
             return new Promise(function (resolve, reject) {
                 try {
-                    mongo_client
+                    management_client
                         .db(MANAGEMENT_DB_NAME)
                         .collection('unilevers')
                         .findOne({ code: code },
@@ -621,7 +615,7 @@ module.exports = function (context, req) {
             await createManagementClient();
             return new Promise(function (resolve, reject) {
                 try {
-                    manamagement_client
+                    management_client
                         .db(MANAGEMENT_DB_NAME)
                         .collection('fridges')
                         .updateOne(
@@ -695,7 +689,7 @@ module.exports = function (context, req) {
             // Write the entry to the database.
             await createEntriesDeparturesClient();
             return new Promise(function (resolve, reject) {
-                manamagement_client
+                management_client
                     .db(ENTRIES_DEPARTURES_DB_NAME)
                     .collection('Control')
                     .insertOne(element,
@@ -718,7 +712,7 @@ module.exports = function (context, req) {
         async function searchFridgeBrand(fridgeBrandId) {
             await createManagementClient();
             return new Promise(function (resolve, reject) {
-                manamagement_client
+                management_client
                     .db(MANAGEMENT_DB_NAME)
                     .collection('fridgebrands')
                     .findOne({ _id: mongodb.ObjectId(fridgeBrandId) },
@@ -835,13 +829,13 @@ module.exports = function (context, req) {
     //Internal global functions
     function createManagementClient() {
         return new Promise(function (resolve, reject) {
-            if (!manamagement_client) {
+            if (!management_client) {
                 mongodb.MongoClient.connect(connection_Management,
-                    function (error, _mongo_client) {
+                    function (error, _management_client) {
                         if (error) {
                             reject(error);
                         }
-                        manamagement_client = _mongo_client;
+                        management_client = _management_client;
                         resolve();
                     });
             }
@@ -855,11 +849,11 @@ module.exports = function (context, req) {
         return new Promise(function (resolve, reject) {
             if (!entries_departures_client) {
                 mongodb.MongoClient.connect(connection_EntriesDepartures,
-                    function (error, _mongo_client) {
+                    function (error, _management_client) {
                         if (error) {
                             reject(error);
                         }
-                        entries_departures_client = _mongo_client;
+                        entries_departures_client = _management_client;
                         resolve();
                     });
             }
