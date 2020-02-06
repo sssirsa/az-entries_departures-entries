@@ -87,7 +87,7 @@ module.exports = function (context, req) {
         }
 
         //Fridge array validation
-        if (!req.body.cabinets_id) {
+        if (!req.body.cabinets) {
             context.res = {
                 status: 400,
                 body: {
@@ -99,7 +99,7 @@ module.exports = function (context, req) {
             };
             context.done();
         }
-        if (req.body.cabinets_id.length === 0) {
+        if (req.body.cabinets.length === 0) {
             context.res = {
                 status: 400,
                 body: {
@@ -355,10 +355,10 @@ module.exports = function (context, req) {
         //Validations of each fridge are made in the searchFridge function
         function addFridgesToEntry() {
             var fridgesInfoPromises = [];
-            while (req.body['cabinets_id'].length) {
+            while (req.body['cabinets'].length) {
                 fridgesInfoPromises.push(
                     searchFridge(
-                        req.body['cabinets_id'].pop()
+                        req.body['cabinets'].pop()
                     )
                 );
             }
