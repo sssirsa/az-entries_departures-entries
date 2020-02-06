@@ -2,11 +2,12 @@ const mongodb = require('mongodb');
 const axios = require('axios');
 const entry_kind = "Buen estado";
 //db connections
-let cosmos_client = null;
-let mongo_client = null;
-const connection_cosmosDB = process.env["connection_cosmosDB"];
-const connection_mongoDB = process.env["connection_mongoDB"];
-const MONGO_DB_NAME = process.env['MONGO_DB_NAME'];
+let management_client = null;
+let entries_departures_client = null;
+const connection_Management = process.env["connection_Management"];
+const connection_EntriesDepartures = process.env["connection_EntriesDepartures"];
+const MANAGEMENT_DB_NAME = process.env['MANAGEMENT_DB_NAME'];
+const ENTRIES_DEPARTURES_DB_NAME = process.env['ENTRIES_DEPARTURES_DB_NAME'];
 
 //URLS
 const entries_departures = process.env["ENTRIES_DEPARTURES"];
@@ -63,8 +64,8 @@ module.exports = function (context, req) {
             await createCosmosClient();
             return new Promise(function (resolve, reject) {
                 try {
-                    cosmos_client
-                        .db('EntriesDepartures')
+                    entries_departures_client
+                        .db(ENTRIES_DEPARTURES_DB_NAME)
                         .collection('Entries')
                         .findOne({ _id: mongodb.ObjectId(id) },
                             function (error, docs) {
@@ -113,8 +114,8 @@ module.exports = function (context, req) {
             await createCosmosClient();
             return new Promise(function (resolve, reject) {
                 try {
-                    cosmos_client
-                        .db('EntriesDepartures')
+                    entries_departures_client
+                        .db(ENTRIES_DEPARTURES_DB_NAME)
                         .collection('Entries')
                         .find(query)
                         .toArray(function (error, docs) {
@@ -340,8 +341,8 @@ module.exports = function (context, req) {
             await createMongoClient();
             return new Promise(function (resolve, reject) {
                 try {
-                    mongo_client
-                        .db(MONGO_DB_NAME)
+                    management_client
+                        .db(MANAGEMENT_DB_NAME)
                         .collection('agencies')
                         .findOne({ _id: mongodb.ObjectId(agencyId) },
                             function (error, docs) {
@@ -406,8 +407,8 @@ module.exports = function (context, req) {
             await createMongoClient();
             return new Promise(function (resolve, reject) {
                 try {
-                    mongo_client
-                        .db(MONGO_DB_NAME)
+                    management_client
+                        .db(MANAGEMENT_DB_NAME)
                         .collection('fridges')
                         .findOne({ economico: fridgeInventoryNumber },
                             function (error, docs) {
@@ -519,8 +520,8 @@ module.exports = function (context, req) {
             await createMongoClient();
             return new Promise(function (resolve, reject) {
                 try {
-                    mongo_client
-                        .db(MONGO_DB_NAME)
+                    management_client
+                        .db(MANAGEMENT_DB_NAME)
                         .collection('subsidiaries')
                         .findOne({ _id: mongodb.ObjectId(subsidiaryId) },
                             function (error, docs) {
@@ -626,8 +627,8 @@ module.exports = function (context, req) {
             await createMongoClient();
             return new Promise(function (resolve, reject) {
                 try {
-                    mongo_client
-                        .db(MONGO_DB_NAME)
+                    management_client
+                        .db(MANAGEMENT_DB_NAME)
                         .collection('unilevers')
                         .findOne({ code: code },
                             function (error, docs) {
@@ -672,8 +673,8 @@ module.exports = function (context, req) {
             await createCosmosClient();
             return new Promise(function (resolve, reject) {
                 try {
-                    cosmos_client
-                        .db('EntriesDepartures')
+                    entries_departures_client
+                        .db(ENTRIES_DEPARTURES_DB_NAME)
                         .collection('Entries')
                         .insertOne(entry, function (error, docs) {
                             if (error) {
@@ -737,8 +738,8 @@ module.exports = function (context, req) {
             await createCosmosClient();
             return new Promise(function (resolve, reject) {
                 try {
-                    cosmos_client
-                        .db('EntriesDepartures')
+                    entries_departures_client
+                        .db(ENTRIES_DEPARTURES_DB_NAME)
                         .collection('Control')
                         .insertOne(control, function (error, docs) {
                             if (error) {
@@ -825,8 +826,8 @@ module.exports = function (context, req) {
             await createMongoClient();
             return new Promise(function (resolve, reject) {
                 try {
-                    mongo_client
-                        .db(MONGO_DB_NAME)
+                    management_client
+                        .db(MANAGEMENT_DB_NAME)
                         .collection('fridges')
                         .updateOne(
                             { _id: mongodb.ObjectId(fridgeId) },
@@ -873,12 +874,12 @@ module.exports = function (context, req) {
 
     function createCosmosClient() {
         return new Promise(function (resolve, reject) {
-            if (!cosmos_client) {
-                mongodb.MongoClient.connect(connection_cosmosDB, function (error, _cosmos_client) {
+            if (!entries_departures_client) {
+                mongodb.MongoClient.connect(connection_EntriesDepartures, function (error, _entries_departures_client) {
                     if (error) {
                         reject(error);
                     }
-                    cosmos_client = _cosmos_client;
+                    entries_departures_client = _entries_departures_client;
                     resolve();
                 });
             }
@@ -890,12 +891,12 @@ module.exports = function (context, req) {
 
     function createMongoClient() {
         return new Promise(function (resolve, reject) {
-            if (!mongo_client) {
-                mongodb.MongoClient.connect(connection_mongoDB, function (error, _mongo_client) {
+            if (!management_client) {
+                mongodb.MongoClient.connect(connection_Management, function (error, _management_client) {
                     if (error) {
                         reject(error);
                     }
-                    mongo_client = _mongo_client;
+                    management_client = _management_client;
                     resolve();
                 });
             }
