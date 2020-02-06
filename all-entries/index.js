@@ -1,9 +1,7 @@
 const mongodb = require('mongodb');
 //db connections
-let mongo_client = null;
-let cosmos_client = null;
-const connection_mongoDB = process.env["connection_mongoDB"];
-const connection_cosmosDB = process.env["connection_cosmosDB"];
+let entries_departures_client = null;
+const connection_EntriesDepartures = process.env["connection_EntriesDepartures"];
 
 module.exports = function (context, req) {
     switch (req.method) {
@@ -45,7 +43,7 @@ module.exports = function (context, req) {
 
                 })
                 .catch(function (error) {
-                    context.log('Error creating cosmos_client for entry detail');
+                    context.log('Error creating entries_departures_client for entry detail');
                     context.log(error);
                     context.res = { status: 500, body: error };
                     context.done();
@@ -74,7 +72,7 @@ module.exports = function (context, req) {
                         });
                 })
                 .catch(function (error) {
-                    context.log('Error creating cosmos_client for entries list');
+                    context.log('Error creating entries_departures_client for entries list');
                     context.log(error);
                     context.res = { status: 500, body: error };
                     context.done();
@@ -95,12 +93,12 @@ module.exports = function (context, req) {
 
     function createCosmosClient() {
         return new Promise(function (resolve, reject) {
-            if (!cosmos_client) {
-                mongodb.MongoClient.connect(connection_cosmosDB, function (error, _cosmos_client) {
+            if (!entries_departures_client) {
+                mongodb.MongoClient.connect(connection_EntriesDepartures, function (error, _entries_departures_client) {
                     if (error) {
                         reject(error);
                     }
-                    cosmos_client = _cosmos_client;
+                    entries_departures_client = _entries_departures_client;
                     resolve();
                 });
             }
@@ -112,7 +110,7 @@ module.exports = function (context, req) {
 
     function getEntry(entryId) {
         return new Promise(function (resolve, reject) {
-            cosmos_client
+            entries_departures_client
                 .db('EntriesDepartures')
                 .collection('Entries')
                 .findOne({ _id: mongodb.ObjectId(entryId) },
@@ -128,7 +126,7 @@ module.exports = function (context, req) {
 
     function getEntries(query) {
         return new Promise(function (resolve, reject) {
-            cosmos_client
+            entries_departures_client
                 .db('EntriesDepartures')
                 .collection('Entries')
                 .find(query)

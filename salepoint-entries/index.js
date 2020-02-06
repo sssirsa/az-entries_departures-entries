@@ -1,10 +1,11 @@
 const mongodb = require('mongodb');
 //db connections
-let mongo_client = null;
-let cosmos_client = null;
-const connection_mongoDB = process.env["connection_mongoDB"];
-const connection_cosmosDB = process.env["connection_cosmosDB"];
-const MONGO_DB_NAME = process.env['MONGO_DB_NAME'];
+let management_client = null;
+let entries_departures_client = null;
+const connection_Management = process.env["connection_Management"];
+const connection_EntriesDepartures = process.env["connection_EntriesDepartures"];
+const MANAGEMENT_DB_NAME = process.env['MANAGEMENT_DB_NAME'];
+const ENTRIES_DEPARTURES_DB_NAME = process.env['ENTRIES_DEPARTURES_DB_NAME'];
 
 module.exports = function (context, req) {
     switch (req.method) {
@@ -17,15 +18,26 @@ module.exports = function (context, req) {
         default:
             notAllowed();
             break;
+    }    
+
+    function notAllowed() {
+        context.res = {
+            status: 405,
+            body: "Method not allowed",
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        };
+        context.done();
     }
     //Create entry
     function POST_entry() {
         //TODO: Get person data trough userid and save it in the entry data
         var userId = null;
-        var agencyId = req.body['udn_destino_id'];
-        var subsidiaryId = req.body['sucursal_destino_id'];
-        var transportDriverId = req.body['operador_transporte_id'];
-        var transportKindId = req.body['tipo_transporte_id']; //Non mandatory
+        var agencyId = req.body['udn_destino'];
+        var subsidiaryId = req.body['sucursal_destino'];
+        var transportDriverId = req.body['operador_transporte'];
+        var transportKindId = req.body['tipo_transporte']; //Non mandatory
         //Destination validation
         if (agencyId && subsidiaryId) {
             //no both
@@ -56,7 +68,7 @@ module.exports = function (context, req) {
         }
 
         //Fridge array validation
-        if (!req.body.cabinets_id) {
+        if (!req.body.cabinets) {
             context.res = {
                 status: 400,
                 body: {
@@ -68,7 +80,7 @@ module.exports = function (context, req) {
             };
             context.done();
         }
-        if (req.body.cabinets_id.length === 0) {
+        if (req.body.cabinets.length === 0) {
             context.res = {
                 status: 400,
                 body: {
@@ -158,7 +170,7 @@ module.exports = function (context, req) {
                                                 });
                                         })
                                         .catch(function (error) {
-                                            context.log('Error creating cosmos_client for transport kind search');
+                                            context.log('Error creating entries_departures_client for transport kind search');
                                             context.log(error);
                                             context.res = { status: 500, body: error };
                                             context.done();
@@ -188,7 +200,7 @@ module.exports = function (context, req) {
                         });
                 })
                 .catch(function (error) {
-                    context.log('Error creating cosmos_client for transport driver search');
+                    context.log('Error creating entries_departures_client for transport driver search');
                     context.log(error);
                     context.res = { status: 500, body: error };
                     context.done();
@@ -259,7 +271,7 @@ module.exports = function (context, req) {
                     }
                 })
                 .catch(function (error) {
-                    context.log('Error creating mongo_client for destination search search');
+                    context.log('Error creating management_client for destination search search');
                     context.log(error);
                     context.res = { status: 500, body: error };
                     context.done();
@@ -270,10 +282,10 @@ module.exports = function (context, req) {
         //Validations of each fridge are made in the searchFridge function
         function addFridgesToEntry() {
             var fridgesInfoPromises = [];
-            while (req.body['cabinets_id'].length) {
+            while (req.body['cabinets'].length) {
                 fridgesInfoPromises.push(
                     searchFridge(
-                        req.body['cabinets_id'].pop()
+                        req.body['cabinets'].pop()
                     )
                 );
             }
@@ -409,7 +421,7 @@ module.exports = function (context, req) {
                         });
                 })
                 .catch(function (error) {
-                    context.log('Error creating cosmos_client for entry detail');
+                    context.log('Error creating entries_departures_client for entry detail');
                     context.log(error);
                     context.res = { status: 500, body: error };
                     context.done();
@@ -438,7 +450,7 @@ module.exports = function (context, req) {
                         });
                 })
                 .catch(function (error) {
-                    context.log('Error creating cosmos_client for entries list');
+                    context.log('Error creating entries_departures_client for entries list');
                     context.log(error);
                     context.res = { status: 500, body: error };
                     context.done();
@@ -448,12 +460,12 @@ module.exports = function (context, req) {
 
     function createMongoClient() {
         return new Promise(function (resolve, reject) {
-            if (!mongo_client) {
-                mongodb.MongoClient.connect(connection_mongoDB, function (error, _mongo_client) {
+            if (!management_client) {
+                mongodb.MongoClient.connect(connection_Management, function (error, _management_client) {
                     if (error) {
                         reject(error);
                     }
-                    mongo_client = _mongo_client;
+                    management_client = _management_client;
                     resolve();
                 });
             }
@@ -465,12 +477,12 @@ module.exports = function (context, req) {
 
     function createCosmosClient() {
         return new Promise(function (resolve, reject) {
-            if (!cosmos_client) {
-                mongodb.MongoClient.connect(connection_cosmosDB, function (error, _cosmos_client) {
+            if (!entries_departures_client) {
+                mongodb.MongoClient.connect(connection_EntriesDepartures, function (error, _entries_departures_client) {
                     if (error) {
                         reject(error);
                     }
-                    cosmos_client = _cosmos_client;
+                    entries_departures_client = _entries_departures_client;
                     resolve();
                 });
             }
@@ -482,8 +494,8 @@ module.exports = function (context, req) {
 
     function getEntry(entryId) {
         return new Promise(function (resolve, reject) {
-            cosmos_client
-                .db('EntriesDepartures')
+            entries_departures_client
+                .db(ENTRIES_DEPARTURES_DB_NAME)
                 .collection('Entries')
                 .findOne({ _id: mongodb.ObjectId(entryId) },
                     function (error, docs) {
@@ -498,8 +510,8 @@ module.exports = function (context, req) {
 
     function getEntries(query) {
         return new Promise(function (resolve, reject) {
-            cosmos_client
-                .db('EntriesDepartures')
+            entries_departures_client
+                .db(ENTRIES_DEPARTURES_DB_NAME)
                 .collection('Entries')
                 .find(query)
                 .toArray(function (error, docs) {
@@ -513,8 +525,8 @@ module.exports = function (context, req) {
 
     function searchFridge(fridgeInventoryNumber) {
         return new Promise(function (resolve, reject) {
-            mongo_client
-                .db(MONGO_DB_NAME)
+            management_client
+                .db(MANAGEMENT_DB_NAME)
                 .collection('fridges')
                 .findOne({ economico: fridgeInventoryNumber },
                     function (error, docs) {
@@ -581,8 +593,8 @@ module.exports = function (context, req) {
 
     function searchUnileverStatus(code) {
         return new Promise(function (resolve, reject) {
-            mongo_client
-                .db(MONGO_DB_NAME)
+            management_client
+                .db(MANAGEMENT_DB_NAME)
                 .collection('unilevers')
                 .findOne({ code: code },
                     function (error, docs) {
@@ -597,8 +609,8 @@ module.exports = function (context, req) {
 
     function searchAgency(agencyId) {
         return new Promise(function (resolve, reject) {
-            mongo_client
-                .db(MONGO_DB_NAME)
+            management_client
+                .db(MANAGEMENT_DB_NAME)
                 .collection('agencies')
                 .findOne({ _id: mongodb.ObjectId(agencyId) },
                     function (error, docs) {
@@ -613,8 +625,8 @@ module.exports = function (context, req) {
 
     function searchSubsidiary(subsidiaryId) {
         return new Promise(function (resolve, reject) {
-            mongo_client
-                .db(MONGO_DB_NAME)
+            management_client
+                .db(MANAGEMENT_DB_NAME)
                 .collection('subsidiaries')
                 .findOne({ _id: mongodb.ObjectId(subsidiaryId) },
                     function (error, docs) {
@@ -629,8 +641,8 @@ module.exports = function (context, req) {
 
     function searchTransportDriver(transportDriverId) {
         return new Promise(function (resolve, reject) {
-            cosmos_client
-                .db('EntriesDepartures')
+            entries_departures_client
+                .db(ENTRIES_DEPARTURES_DB_NAME)
                 .collection('TransportDriver')
                 .findOne({ _id: mongodb.ObjectId(transportDriverId) },
                     function (error, docs) {
@@ -645,8 +657,8 @@ module.exports = function (context, req) {
 
     function searchTransportKind(transportKindId) {
         return new Promise(function (resolve, reject) {
-            cosmos_client
-                .db('EntriesDepartures')
+            entries_departures_client
+                .db(ENTRIES_DEPARTURES_DB_NAME)
                 .collection('TransportKind')
                 .findOne({ _id: mongodb.ObjectId(transportKindId) },
                     function (error, docs) {
@@ -662,8 +674,8 @@ module.exports = function (context, req) {
     function writeEntry(entry) {
         // Write the entry to the database.
         return new Promise(function (resolve, reject) {
-            cosmos_client
-                .db('EntriesDepartures')
+            entries_departures_client
+                .db(ENTRIES_DEPARTURES_DB_NAME)
                 .collection('Entries')
                 .insertOne(entry,
                     function (error, docs) {
@@ -678,8 +690,8 @@ module.exports = function (context, req) {
 
     function updateFridgeDestination(newValues, fridgeId) {
         return new Promise(function (resolve, reject) {
-            mongo_client
-                .db(MONGO_DB_NAME)
+            management_client
+                .db(MANAGEMENT_DB_NAME)
                 .collection('fridges')
                 .updateOne(
                     { _id: mongodb.ObjectId(fridgeId) },
@@ -729,8 +741,8 @@ module.exports = function (context, req) {
     function writeFridgeControl(element) {
         // Write the entry to the database.
         return new Promise(function (resolve, reject) {
-            cosmos_client
-                .db('EntriesDepartures')
+            entries_departures_client
+                .db(ENTRIES_DEPARTURES_DB_NAME)
                 .collection('Control')
                 .insertOne(element,
                     function (error, docs) {
