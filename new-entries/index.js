@@ -2,12 +2,12 @@ const mongodb = require('mongodb');
 const axios = require('axios');
 const entry_kind = "Nuevos";
 //db connections
-let management_client = null;
 let entries_departures_client = null;
-const connection_Management = process.env["connection_Management"];
+let management_client = null;
 const connection_EntriesDepartures = process.env["connection_EntriesDepartures"];
-const MANAGEMENT_DB_NAME = process.env['MANAGEMENT_DB_NAME'];
+const connection_Management = process.env["connection_Management"];
 const ENTRIES_DEPARTURES_DB_NAME = process.env['ENTRIES_DEPARTURES_DB_NAME'];
+const MANAGEMENT_DB_NAME = process.env['MANAGEMENT_DB_NAME'];
 //URLS
 const entries_departures = process.env["ENTRIES_DEPARTURES"];
 
