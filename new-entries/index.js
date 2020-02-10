@@ -81,6 +81,7 @@ module.exports = function (context, req) {
                             descripcion: req.body.descripcion,
                             fecha_hora: date_string,
                             tipo_entrada: entry_kind,
+                            proveedor_origen:fridgeBrand,
                             nombre_chofer: req.body.nombre_chofer,
                             pedimento: req.body.pedimento,
                             persona: req.body.persona,
