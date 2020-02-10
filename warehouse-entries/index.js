@@ -235,16 +235,16 @@ module.exports = function (context, req) {
 
         //Internal functions
         function validate() {
-            //Destination validation
-            //No destination validation for salepoint entries
+            //Origin validation
+            //No origin validation for salepoint entries
 
-            //Origin validation        
-            if (!originAgencyId && !originSubsidiaryId) {
+            //Destination validation        
+            if (!destinationAgencyId && !destinationSubsidiaryId) {
                 //at least one
                 context.res = {
                     status: 400,
                     body: {
-                        message: 'ES-056'
+                        message: 'ES-002'
                     },
                     headers: {
                         'Content-Type': 'application / json'
@@ -252,12 +252,12 @@ module.exports = function (context, req) {
                 };
                 context.done();
             }
-            if (originAgencyId && originSubsidiaryId) {
+            if (destinationAgencyId && destinationSubsidiaryId) {
                 //not both
                 context.res = {
                     status: 400,
                     body: {
-                        message: 'ES-053'
+                        message: 'ES-001'
                     },
                     headers: {
                         'Content-Type': 'application / json'
