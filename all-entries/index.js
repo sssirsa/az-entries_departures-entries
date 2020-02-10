@@ -2,6 +2,8 @@ const mongodb = require('mongodb');
 //db connections
 let entries_departures_client = null;
 const connection_EntriesDepartures = process.env["connection_EntriesDepartures"];
+const ENTRIES_DEPARTURES_DB_NAME = process.env['ENTRIES_DEPARTURES_DB_NAME'];
+
 
 module.exports = function (context, req) {
     switch (req.method) {
@@ -21,7 +23,7 @@ module.exports = function (context, req) {
         }
         if (requestedID) {
             //Get specific entry
-            createCosmosClient()
+            createEntriesDeparturesClient()
                 .then(function () {
                     getEntry(requestedID)
                         .then(function (entry) {
@@ -52,7 +54,7 @@ module.exports = function (context, req) {
         }
         else {
             //Get entries list
-            createCosmosClient()
+            createEntriesDeparturesClient()
                 .then(function () {
                     getEntries(requestedKind)
                         .then(function (entriesList) {
@@ -91,7 +93,7 @@ module.exports = function (context, req) {
         context.done();
     }
 
-    function createCosmosClient() {
+    function createEntriesDeparturesClient() {
         return new Promise(function (resolve, reject) {
             if (!entries_departures_client) {
                 mongodb.MongoClient.connect(connection_EntriesDepartures, function (error, _entries_departures_client) {
@@ -111,7 +113,7 @@ module.exports = function (context, req) {
     function getEntry(entryId) {
         return new Promise(function (resolve, reject) {
             entries_departures_client
-                .db('EntriesDepartures')
+                .db(ENTRIES_DEPARTURES_DB_NAME)
                 .collection('Entries')
                 .findOne({ _id: mongodb.ObjectId(entryId) },
                     function (error, docs) {
@@ -127,7 +129,7 @@ module.exports = function (context, req) {
     function getEntries(query) {
         return new Promise(function (resolve, reject) {
             entries_departures_client
-                .db('EntriesDepartures')
+                .db(ENTRIES_DEPARTURES_DB_NAME)
                 .collection('Entries')
                 .find(query)
                 .toArray(function (error, docs) {
