@@ -63,10 +63,9 @@ module.exports = function (context, req) {
                     transportKind = await searchTransportKind(transportKindId);
                 }
                 //Mandatory fields
-                let fridgeBrand = await searchFridgeBrand(originProviderId);
                 let fridges = await searchAllFridges(req.body['cabinets']);
 
-                let precedentPromises = [transportDriver, transportKind, destinationAgency, destinationSubsidiary, fridgeBrand, fridges];
+                let precedentPromises = [transportDriver, transportKind, destinationAgency, destinationSubsidiary, fridges];
 
                 Promise.all(precedentPromises)
                     .then(async function () {
@@ -101,13 +100,24 @@ module.exports = function (context, req) {
                         context.done();
                     })
                     .catch(function (error) {
-                        context.res = error;
+                        context.res = {
+                            status: 500,
+                            body: error.toString(),
+                            headers: {
+                                "Content-Type": "application/json"
+                            }
+                        };
                         context.done();
                     });
             }
             catch (error) {
-                context.log(error);
-                context.res = error;
+                context.res = {
+                    status: 500,
+                    body: error.toString(),
+                    headers: {
+                        "Content-Type": "application/json"
+                    }
+                };
                 context.done();
             }
         }
@@ -115,7 +125,7 @@ module.exports = function (context, req) {
         //Internal functions
         function validate() {
             //Destination validation
-            if (agencyId && subsidiaryId) {
+            if (destinationAgencyId && destinationSubsidiaryId) {
                 //no both
                 context.res = {
                     status: 400,
@@ -129,7 +139,7 @@ module.exports = function (context, req) {
                 context.done();
             }
 
-            if (!agencyId && !subsidiaryId) {
+            if (!destinationAgencyId && !destinationSubsidiaryId) {
                 //at least one
                 context.res = {
                     status: 400,
@@ -148,7 +158,7 @@ module.exports = function (context, req) {
                 context.res = {
                     status: 400,
                     body: {
-                        message: 'ES-003'
+                        message: 'ES-003' < z
                     },
                     headers: {
                         'Content-Type': 'application / json'
