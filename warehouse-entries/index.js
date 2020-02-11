@@ -61,7 +61,7 @@ module.exports = function (context, req) {
 
         //Internal functions
         async function getEntry(id) {
-            await createCosmosClient();
+            await createEntriesDeparturesClient();
             return new Promise(function (resolve, reject) {
                 try {
                     entries_departures_client
@@ -111,7 +111,7 @@ module.exports = function (context, req) {
             let query = {
                 tipo_entrada: entry_kind
             };
-            await createCosmosClient();
+            await createEntriesDeparturesClient();
             return new Promise(function (resolve, reject) {
                 try {
                     entries_departures_client
@@ -199,7 +199,7 @@ module.exports = function (context, req) {
                         fecha_hora: date_string,
                         tipo_entrada: entry_kind,
                         nombre_chofer: req.body.nombre_chofer,
-                        persona: null,
+                        persona: req.body.persona,
                         sucursal_origen: originSubsidiary,
                         udn_origen: originAgency,
                         sucursal_destino: destinationSubsidiary,
@@ -670,7 +670,7 @@ module.exports = function (context, req) {
             });
         }
         async function writeEntry() {
-            await createCosmosClient();
+            await createEntriesDeparturesClient();
             return new Promise(function (resolve, reject) {
                 try {
                     entries_departures_client
@@ -735,7 +735,7 @@ module.exports = function (context, req) {
             });
         }
         async function createControl(control) {
-            await createCosmosClient();
+            await createEntriesDeparturesClient();
             return new Promise(function (resolve, reject) {
                 try {
                     entries_departures_client
@@ -872,7 +872,7 @@ module.exports = function (context, req) {
         context.done();
     }
 
-    function createCosmosClient() {
+    function createEntriesDeparturesClient() {
         return new Promise(function (resolve, reject) {
             if (!entries_departures_client) {
                 mongodb.MongoClient.connect(connection_EntriesDepartures, function (error, _entries_departures_client) {
