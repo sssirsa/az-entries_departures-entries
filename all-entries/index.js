@@ -2,6 +2,8 @@ const mongodb = require('mongodb');
 //db connections
 let entries_departures_client = null;
 const connection_EntriesDepartures = process.env["connection_EntriesDepartures"];
+const ENTRIES_DEPARTURES_DB_NAME = process.env['ENTRIES_DEPARTURES_DB_NAME'];
+
 
 module.exports = function (context, req) {
     switch (req.method) {
@@ -12,7 +14,7 @@ module.exports = function (context, req) {
             notAllowed();
             break;
     }
-    function GET_entries() {
+    async function GET_entries() {
         var requestedID;
         var requestedKind;
         if (req.query) {
@@ -21,62 +23,84 @@ module.exports = function (context, req) {
         }
         if (requestedID) {
             //Get specific entry
-            createCosmosClient()
-                .then(function () {
-                    getEntry(requestedID)
-                        .then(function (entry) {
-                            context.res = {
-                                status: 200,
-                                body: entry,
-                                headers: {
-                                    'Content-Type': 'application/json'
-                                }
-                            };
-                            context.done();
-                        })
-                        .catch(function (error) {
-                            context.log('Error reading entry from database');
-                            context.log(error);
-                            context.res = { status: 500, body: error };
-                            context.done();
-                        });
+            try {
+                entry = await getEntry(requestedID);
+                context.res = {
+                    status: 200,
+                    body: entry,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                };
+                context.done();
 
-                })
-                .catch(function (error) {
-                    context.log('Error creating entries_departures_client for entry detail');
-                    context.log(error);
-                    context.res = { status: 500, body: error };
-                    context.done();
-
-                });
+            }
+            catch (error) {
+                context.res = error;
+                context.done();
+            }
         }
+
         else {
             //Get entries list
-            createCosmosClient()
-                .then(function () {
-                    getEntries(requestedKind)
-                        .then(function (entriesList) {
-                            context.res = {
-                                body: entriesList,
+            try {
+                let entries = await getEntries(requestedKind);
+                context.res = {
+                    body: entries,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                };
+                context.done();
+            }
+            catch (error) {
+                context.res = error;
+                context.done();
+            }
+        }
+        async function getEntry(entryId) {
+            await createEntriesDeparturesClient();
+            return new Promise(function (resolve, reject) {
+                entries_departures_client
+                    .db(ENTRIES_DEPARTURES_DB_NAME)
+                    .collection('Entries')
+                    .findOne({ _id: mongodb.ObjectId(entryId) },
+                        function (error, docs) {
+                            if (error) {
+                                reject({
+                                    status: 500,
+                                    body: error.toString(),
+                                    headers: {
+                                        "Content-Type": "application/json"
+                                    }
+                                });
+                            }
+                            resolve(docs);
+                        }
+                    );
+            });
+        }
+
+        async function getEntries(query) {
+            await createEntriesDeparturesClient();
+            return new Promise(function (resolve, reject) {
+                entries_departures_client
+                    .db(ENTRIES_DEPARTURES_DB_NAME)
+                    .collection('Entries')
+                    .find(query)
+                    .toArray(function (error, docs) {
+                        if (error) {
+                            reject({
+                                status: 500,
+                                body: error.toString(),
                                 headers: {
-                                    'Content-Type': 'application/json'
+                                    "Content-Type": "application/json"
                                 }
-                            };
-                            context.done();
-                        })
-                        .catch(function (error) {
-                            context.log('Error entries list from database');
-                            context.log(error);
-                            context.res = { status: 500, body: error };
-                            context.done();
-                        });
-                })
-                .catch(function (error) {
-                    context.log('Error creating entries_departures_client for entries list');
-                    context.log(error);
-                    context.res = { status: 500, body: error };
-                    context.done();
-                });
+                            });
+                        }
+                        resolve(docs)
+                    });
+            });
         }
     }
 
@@ -91,7 +115,7 @@ module.exports = function (context, req) {
         context.done();
     }
 
-    function createCosmosClient() {
+    function createEntriesDeparturesClient() {
         return new Promise(function (resolve, reject) {
             if (!entries_departures_client) {
                 mongodb.MongoClient.connect(connection_EntriesDepartures, function (error, _entries_departures_client) {
@@ -105,37 +129,6 @@ module.exports = function (context, req) {
             else {
                 resolve();
             }
-        });
-    }
-
-    function getEntry(entryId) {
-        return new Promise(function (resolve, reject) {
-            entries_departures_client
-                .db('EntriesDepartures')
-                .collection('Entries')
-                .findOne({ _id: mongodb.ObjectId(entryId) },
-                    function (error, docs) {
-                        if (error) {
-                            reject(error);
-                        }
-                        resolve(docs);
-                    }
-                );
-        });
-    }
-
-    function getEntries(query) {
-        return new Promise(function (resolve, reject) {
-            entries_departures_client
-                .db('EntriesDepartures')
-                .collection('Entries')
-                .find(query)
-                .toArray(function (error, docs) {
-                    if (error) {
-                        reject(error);
-                    }
-                    resolve(docs)
-                });
         });
     }
 
