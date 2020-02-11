@@ -692,8 +692,7 @@ module.exports = function (context, req) {
                         entrada_id: entry['_id'],
                         impedimento_id: null,
                         servicio_id: null,
-                        sucursal_id: destinationSubsidiaryId,
-                        udn_id: destinationAgencyId
+                        sucursal_id: destinationSubsidiaryId
                     };
                     fridgesControlPromises.push(
                         createControl(element)
