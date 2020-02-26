@@ -764,7 +764,8 @@ module.exports = function (context, req) {
 
             let newValues = {
                 estatus_unilever: unileverStatus,
-                estatus_unilever_id: unileverStatus['_id']
+                estatus_unilever_id: unileverStatus['_id'],
+                fecha_ingreso: entry.fecha_hora
             };
 
             if (entry.sucursal_destino) {

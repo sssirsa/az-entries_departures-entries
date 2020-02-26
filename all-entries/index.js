@@ -14,6 +14,17 @@ module.exports = function (context, req) {
             notAllowed();
             break;
     }
+    function notAllowed() {
+        context.res = {
+            status: 405,
+            body: "Method not allowed",
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        };
+        context.done();
+    }
+    
     async function GET_entries() {
         var requestedID;
         var requestedKind;
@@ -104,16 +115,7 @@ module.exports = function (context, req) {
         }
     }
 
-    function notAllowed() {
-        context.res = {
-            status: 405,
-            body: "Method not allowed",
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        };
-        context.done();
-    }
+    
 
     function createEntriesDeparturesClient() {
         return new Promise(function (resolve, reject) {
