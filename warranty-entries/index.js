@@ -763,17 +763,17 @@ module.exports = function (context, req) {
             let unileverStatus = await searchUnileverStatus('0001');
 
             let newValues = {
+                sucursal: null,
+                udn: null,
                 estatus_unilever: unileverStatus,
-                estatus_unilever_id: unileverStatus['_id']
+                fecha_ingreso: entry.fecha_hora
             };
 
             if (entry.sucursal_destino) {
                 newValues.sucursal = entry['sucursal_destino'];
-                newValues.sucursal_id = entry['sucursal_destino']._id;
             }
             if (entry.udn_destino) {
                 newValues.udn = entry['udn_destino'];
-                newValues.udn_id = entry['udn_destino']._id;
 
             }
 

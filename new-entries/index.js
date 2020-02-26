@@ -579,7 +579,8 @@ module.exports = function (context, req) {
             let newValues = {
                 sucursal: null,
                 udn: null,
-                estatus_unilever: unlieverStatus
+                estatus_unilever: unlieverStatus,
+                fecha_ingreso: entry.fecha_hora
             };
             if (entry['udn_destino']) {
                 newValues.udn = entry['udn_destino'];
