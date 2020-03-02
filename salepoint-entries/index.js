@@ -71,12 +71,11 @@ module.exports = function (context, req) {
                     .then(async function () {
 
                         var date = new Date();
-                        var date_string = date.toISOString();
 
                         // Create an entry base object.
                         entry = {
                             descripcion: req.body.descripcion,
-                            fecha_hora: date_string,
+                            fecha_hora: date,
                             tipo_entrada: entry_kind,
                             nombre_chofer: req.body.nombre_chofer,
                             persona: req.body.persona,
@@ -782,6 +781,7 @@ module.exports = function (context, req) {
                     .db(ENTRIES_DEPARTURES_DB_NAME)
                     .collection('Entries')
                     .find(query)
+                    .sort({ fecha_hora: -1 })
                     .toArray(function (error, docs) {
                         if (error) {
                             reject({

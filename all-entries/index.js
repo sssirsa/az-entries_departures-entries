@@ -32,16 +32,16 @@ module.exports = function (context, req) {
         if (req.query) {
             requestedID = req.query["id"];
             if (req.query["tipo_entrada"]) {
-                if(!query){
-                    query={};
+                if (!query) {
+                    query = {};
                 }
-                query["tipo_entrada"]= req.query["tipo_entrada"];
+                query["tipo_entrada"] = req.query["tipo_entrada"];
             }
             if (req.query["economico"]) {
-                if(!query){
-                    query={};
+                if (!query) {
+                    query = {};
                 }
-                query["cabinets.economico"]= req.query["economico"] ;
+                query["cabinets.economico"] = req.query["economico"];
             }
         }
         if (requestedID) {
@@ -111,6 +111,7 @@ module.exports = function (context, req) {
                     .db(ENTRIES_DEPARTURES_DB_NAME)
                     .collection('Entries')
                     .find(query)
+                    .sort({ fecha_hora: -1 })
                     .toArray(function (error, docs) {
                         if (error) {
                             reject({
