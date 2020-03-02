@@ -24,13 +24,25 @@ module.exports = function (context, req) {
         };
         context.done();
     }
-    
+
     async function GET_entries() {
         var requestedID;
-        var requestedKind;
+        //var requestedKind;
+        var query;
         if (req.query) {
             requestedID = req.query["id"];
-            requestedKind = req.query["tipo_entrada"];
+            if (req.query["tipo_entrada"]) {
+                if(!query){
+                    query={};
+                }
+                query["tipo_entrada"]= req.query["tipo_entrada"];
+            }
+            if (req.query["economico"]) {
+                if(!query){
+                    query={};
+                }
+                query["cabinets.economico"]= req.query["economico"] ;
+            }
         }
         if (requestedID) {
             //Get specific entry
@@ -55,7 +67,7 @@ module.exports = function (context, req) {
         else {
             //Get entries list
             try {
-                let entries = await getEntries(requestedKind);
+                let entries = await getEntries(query);
                 context.res = {
                     body: entries,
                     headers: {
@@ -115,7 +127,7 @@ module.exports = function (context, req) {
         }
     }
 
-    
+
 
     function createEntriesDeparturesClient() {
         return new Promise(function (resolve, reject) {
