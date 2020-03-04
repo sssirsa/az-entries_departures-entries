@@ -92,7 +92,7 @@ module.exports = function (context, req) {
                         };
                         let response = await writeEntry(entry);
                         await updateFridges(fridges, entry)
-                        await writeFridgesControl(response.ops[0]);
+                       // await writeFridgesControl(response.ops[0]);
 
                         context.res = {
                             status: 200,

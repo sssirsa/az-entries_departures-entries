@@ -210,7 +210,7 @@ module.exports = function (context, req) {
                     };
 
                     let response = await writeEntry();
-                    await createAllControl(response.ops[0]);
+                    //await createAllControl(response.ops[0]);
                     await updateFridges(entry);
 
                     context.res = {
