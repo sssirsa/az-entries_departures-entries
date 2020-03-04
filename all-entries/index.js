@@ -43,6 +43,7 @@ module.exports = function (context, req) {
                 }
                 query["cabinets.economico"] = req.query["economico"];
             }
+            //{ fecha_hora: { $gte: ISODate('2020-03-01')} }
         }
         if (requestedID) {
             //Get specific entry
