@@ -209,7 +209,7 @@ module.exports = function (context, req) {
                     };
 
                     let response = await writeEntry();
-                    await createAllControl(response.ops[0]);
+                    //await createAllControl(response.ops[0]);
                     await updateFridges(entry);
 
                     context.res = {
@@ -449,8 +449,10 @@ module.exports = function (context, req) {
                                 }
                                 if (docs.estatus_unilever) {
                                     if (
-                                        docs.estatus_unilever['code'] !== "0007"
+                                        docs.estatus_unilever['code'] !== "0001"
                                         && docs.estatus_unilever['code'] !== "0003"
+                                        && docs.estatus_unilever['code'] !== "0007"
+                                        && docs.estatus_unilever['code'] !== "0010"
                                         && docs.estatus_unilever['code'] !== "0011"
                                     ) {
                                         //Improper unilever status
@@ -467,19 +469,19 @@ module.exports = function (context, req) {
                                         return;
                                     }
                                 }
-                                if (docs.nuevo) {
-                                    //New fridge
-                                    reject({
-                                        status: 400,
-                                        body: {
-                                            message: 'ES-059'
-                                        },
-                                        headers: {
-                                            'Content-Type': 'application / json'
-                                        }
-                                    });
-                                    return;
-                                }
+                                // if (docs.nuevo) {
+                                //     //New fridge
+                                //     reject({
+                                //         status: 400,
+                                //         body: {
+                                //             message: 'ES-059'
+                                //         },
+                                //         headers: {
+                                //             'Content-Type': 'application / json'
+                                //         }
+                                //     });
+                                //     return;
+                                // }
                                 //Resolve correctly if all validations are passed        
                                 resolve(docs);
                             }
