@@ -1,13 +1,13 @@
 const mongodb = require('mongodb');
 //db connections
 let entries_departures_client = null;
-const connection_EntriesDepartures = process.env["connection_EntriesDepartures"];
+const connection_EntriesDepartures = process.env['connection_EntriesDepartures'];
 const ENTRIES_DEPARTURES_DB_NAME = process.env['ENTRIES_DEPARTURES_DB_NAME'];
 
 
 module.exports = function (context, req) {
     switch (req.method) {
-        case "GET":
+        case 'GET':
             GET_entries();
             break;
         default:
@@ -17,7 +17,7 @@ module.exports = function (context, req) {
     function notAllowed() {
         context.res = {
             status: 405,
-            body: "Method not allowed",
+            body: 'Method not allowed',
             headers: {
                 'Content-Type': 'application/json'
             }
@@ -29,19 +29,20 @@ module.exports = function (context, req) {
         var requestedID;
         //var requestedKind;
         var query;
+        //Adding filters
         if (req.query) {
-            requestedID = req.query["id"];
-            if (req.query["tipo_entrada"]) {
+            requestedID = req.query['id'];
+            if (req.query['tipo_entrada']) {
                 if (!query) {
                     query = {};
                 }
-                query["tipo_entrada"] = req.query["tipo_entrada"];
+                query['tipo_entrada'] = req.query['tipo_entrada'];
             }
-            if (req.query["economico"]) {
+            if (req.query['economico']) {
                 if (!query) {
                     query = {};
                 }
-                query["cabinets.economico"] = req.query["economico"];
+                query['cabinets.economico'] = req.query['economico'];
             }
             if (req.query['fecha_inicio'] || req.query['fecha_fin']) {
                 if (!query) {
@@ -62,7 +63,18 @@ module.exports = function (context, req) {
                 }
                 query['fecha_hora'] = fecha_hora;
             }
-            //{ fecha_hora: { $gte: ISODate('2020-03-01')} }
+            if (req.query['sucursal']) {
+                if (!query) {
+                    query = {};
+                }
+                query['sucursal_destino._id'] = mongodb.ObjectId(req.query['sucursal']);
+            }            
+            if (req.query['udn']) {
+                if (!query) {
+                    query = {};
+                }
+                query['udn_destino._id'] = mongodb.ObjectId(req.query['udn']);
+            }
         }
         if (requestedID) {
             //Get specific entry
@@ -114,7 +126,7 @@ module.exports = function (context, req) {
                                     status: 500,
                                     body: error.toString(),
                                     headers: {
-                                        "Content-Type": "application/json"
+                                        'Content-Type': 'application/json'
                                     }
                                 });
                             }
@@ -138,7 +150,7 @@ module.exports = function (context, req) {
                                 status: 500,
                                 body: error.toString(),
                                 headers: {
-                                    "Content-Type": "application/json"
+                                    'Content-Type': 'application/json'
                                 }
                             });
                         }
