@@ -362,13 +362,10 @@ module.exports = function (context, req) {
                                     });
                                     return;
                                 }
+                                let validUnileverStatuses = ["0001", "0002", "0005", "0009", "0011"];
                                 if (docs.estatus_unilever) {
-                                    if (
-                                        docs.estatus_unilever['code'] !== "0002"
-                                        && docs.estatus_unilever['code'] !== "0005"
-                                        && docs.estatus_unilever['code'] !== "0009"
-                                        && docs.estatus_unilever['code'] !== "0011"
-                                    ) {
+                                    if (!validUnileverStatuses.contains(docs.estatus_unilever['code'])) {
+                                        //Improper unilever status
                                         reject({
                                             status: 400,
                                             body: {
@@ -544,11 +541,11 @@ module.exports = function (context, req) {
         async function updateFridges(fridges, entry) {
             //Cloning the array
             let fridgesArray = fridges.slice();
-            let unlieverStatus = await searchUnileverStatus('0001');
+            //let unlieverStatus = await searchUnileverStatus('0001');
             let newValues = {
                 sucursal: null,
                 udn: null,
-                estatus_unilever: unlieverStatus,
+                estatus_unilever: null,
                 fecha_ingreso: entry.fecha_hora
             };
             if (entry['udn_destino']) {
