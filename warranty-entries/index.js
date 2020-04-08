@@ -447,14 +447,9 @@ module.exports = function (context, req) {
                                     reject(err);
                                     return;
                                 }
+                                let validUnileverStatuses = ["0001", "0003", "0007", "0010", "0011", "0012"];
                                 if (docs.estatus_unilever) {
-                                    if (
-                                        docs.estatus_unilever['code'] !== "0001"
-                                        && docs.estatus_unilever['code'] !== "0003"
-                                        && docs.estatus_unilever['code'] !== "0007"
-                                        && docs.estatus_unilever['code'] !== "0010"
-                                        && docs.estatus_unilever['code'] !== "0011"
-                                    ) {
+                                    if (!validUnileverStatuses.contains(docs.estatus_unilever['code'])) {
                                         //Improper unilever status
                                         err = {
                                             status: 400,
@@ -762,7 +757,7 @@ module.exports = function (context, req) {
         async function updateFridges(entry) {
             let fridges = entry['cabinets'];
             let fridgesArray = fridges.slice();
-            let unileverStatus = await searchUnileverStatus('0001');
+            let unileverStatus = await searchUnileverStatus('0003');
 
             let newValues = {
                 sucursal: null,
