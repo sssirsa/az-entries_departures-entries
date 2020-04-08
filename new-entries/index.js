@@ -80,7 +80,7 @@ module.exports = function (context, req) {
                             descripcion: req.body.descripcion,
                             fecha_hora: date,
                             tipo_entrada: entry_kind,
-                            proveedor_origen:fridgeBrand,
+                            proveedor_origen: fridgeBrand,
                             nombre_chofer: req.body.nombre_chofer,
                             pedimento: req.body.pedimento,
                             persona: req.body.persona,
@@ -92,7 +92,7 @@ module.exports = function (context, req) {
                         };
                         let response = await writeEntry(entry);
                         await updateFridges(fridges, entry)
-                       // await writeFridgesControl(response.ops[0]);
+                        // await writeFridgesControl(response.ops[0]);
 
                         context.res = {
                             status: 200,
@@ -396,9 +396,11 @@ module.exports = function (context, req) {
                                     });
                                     return;
                                 }
+
+                                let validUnileverStatuses = ["0001", "0011"];
                                 if (docs.estatus_unilever) {
-                                    if (docs.estatus_unilever['code'] !== "0001") {
-                                        //Not found fridge
+                                    if (!validUnileverStatuses.contains(docs.estatus_unilever['code'])) {
+                                        //Improper unilever status
                                         reject({
                                             status: 400,
                                             body: {
