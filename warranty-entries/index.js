@@ -169,6 +169,9 @@ module.exports = function (context, req) {
         validate();
 
         try {
+            await createDatabaseClient();
+            let date = new Date();
+
             let originAgency,
                 destinationSubsidiary,
                 transportDriver,
@@ -191,7 +194,6 @@ module.exports = function (context, req) {
 
             Promise.all(precedentPromises)
                 .then(async function () {
-                    let date = new Date();
 
                     // Create a entry base object.
                     entry = {
@@ -208,12 +210,13 @@ module.exports = function (context, req) {
                     };
 
                     let response = await writeEntry();
-                    //await createAllControl(response.ops[0]);
                     await updateFridges(entry);
+                    let createdEntry = response.ops[0];
+                    await createServices(fridges, createdEntry);
 
                     context.res = {
                         status: 200,
-                        body: response.ops[0],
+                        body: createdEntry,
                         headers: {
                             "Content-Type": "application/json"
                         }
@@ -389,6 +392,15 @@ module.exports = function (context, req) {
                         .db(MANAGEMENT_DB_NAME)
                         .collection('fridges')
                         .findOne({ economico: fridgeInventoryNumber },
+                            {
+                                _id: 1,
+                                economico: 1,
+                                no_serie: 1,
+                                modelo: 1,
+                                sucursal: 1,
+                                udn: 1,
+                                estatus_unilever: 1
+                            },
                             function (error, docs) {
                                 if (error) {
                                     reject({
@@ -683,81 +695,6 @@ module.exports = function (context, req) {
                 }
             });
         }
-        async function createAllControl(entry) {
-            return new Promise(async function (resolve, reject) {
-                var fridgesControlPromises = [];
-                for (var i = 0; i < entry.cabinets.length; i++) {
-                    element = {
-                        tipo_entrada: "Buen estado",
-                        cabinet_id: entry.cabinets[i].economico,
-                        entrada_id: entry['_id'],
-                        impedimento_id: null,
-                        servicio_id: null,
-                        sucursal_id: destinationSubsidiaryId
-                    };
-                    fridgesControlPromises.push(
-                        createControl(element)
-                    );
-                }
-                try {
-                    let fridgesArray = await Promise.all(fridgesControlPromises);
-
-                    resolve(fridgesArray);
-                }
-                catch (error) {
-                    reject({
-                        status: 500,
-                        body: error,
-                        headers: {
-                            'Content-Type': 'application / json'
-                        }
-                    });
-                }
-            });
-        }
-        async function createControl(control) {
-            await createDatabaseClient();
-            return new Promise(function (resolve, reject) {
-                try {
-                    db_client
-                        .db(ENTRIES_DEPARTURES_DB_NAME)
-                        .collection('Control')
-                        .insertOne(control, function (error, docs) {
-                            if (error) {
-                                reject({
-                                    status: 500,
-                                    body: error,
-                                    headers: {
-                                        'Content-Type': 'application / json'
-                                    }
-                                });
-                                return;
-                            }
-                            if (!docs) {
-                                reject({
-                                    status: 500,
-                                    body: 'Error at creating control  ',
-                                    headers: {
-                                        'Content-Type': 'application / json'
-                                    }
-                                });
-                            }
-                            if (docs) {
-                                resolve(docs);
-                            }
-                        });
-                }
-                catch (error) {
-                    reject({
-                        status: 500,
-                        body: error,
-                        headers: {
-                            'Content-Type': 'application / json'
-                        }
-                    });
-                }
-            });
-        }
         async function updateFridges(entry) {
             let fridges = entry['cabinets'];
             let fridgesArray = fridges.slice();
@@ -840,14 +777,30 @@ module.exports = function (context, req) {
                 }
             });
         }
-        async function createServices(fridges) {
+        async function createServices(fridges, entry) {
             await createDatabaseClient();
             return new Promise(function (resolve, reject) {
                 try {
+                    let servicesArray = [];
+                    fridges.forEach((fridge) => {
+                        let service = {
+                            fridge: fridge,
+                            endDate: null,
+                            startDate: date,
+                            entry: entry,
+                            changes: [],
+                            stages: [],
+                            departure: null
+                        };
+                        servicesArray.push(service);
+                    });
+                    // for(var i=0;i<fridges.length;i++){
+
+                    // }
                     db_client
-                        .db(ENTRIES_DEPARTURES_DB_NAME)
-                        .collection('Entries')
-                        .insertOne(entry, function (error, docs) {
+                        .db(TECHNICAL_SERVICE_DB_NAME)
+                        .collection('Service')
+                        .insertMany(servicesArray, function (error, docs) {
                             if (error) {
                                 reject({
                                     status: 500,
