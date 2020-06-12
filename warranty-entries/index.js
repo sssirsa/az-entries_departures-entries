@@ -212,7 +212,7 @@ module.exports = function (context, req) {
                     let response = await writeEntry();
                     await updateFridges(entry);
                     let createdEntry = response.ops[0];
-                    await createServices(fridges, createdEntry);
+                    await createServices(fridges, createdEntry._id);
 
                     context.res = {
                         status: 201,
@@ -777,22 +777,27 @@ module.exports = function (context, req) {
                 }
             });
         }
-        async function createServices(fridges, entry) {
+        async function createServices(fridges, entryId) {
             return new Promise(async function (resolve, reject) {
                 try {
                     await createDatabaseClient();
-                    var servicesArray = [];
+                    //Initial service creation based on subsidiary workflow
+                    let workflow=await searchWorkflow(destinationSubsidiaryId);
+                    let initialStage= await searchStage(workflow.initial);
+                    let stages=[initialStage];
+                    let servicesArray = [];
                     fridges.forEach(function(fridge) {
                         let service = {
                             fridge: fridge,
                             endDate: null,
                             startDate: date,
-                            entry: entry,
+                            entry: entryId,
                             changes: [],
-                            stages: [],
+                            stages: stages,
                             departure: null,
                             actualFlow: null
                         };
+                        service.stages.push();
                         servicesArray.push(service);
                     });
                     db_client
@@ -813,6 +818,7 @@ module.exports = function (context, req) {
                         });
                 }
                 catch (error) {
+                    context.log(error);
                     reject({
                         status: 500,
                         body: error,
@@ -820,6 +826,82 @@ module.exports = function (context, req) {
                             'Content-Type': 'application / json'
                         }
                     });
+                }
+            });
+        }
+        async function searchWorkflow(subsidiaryId) {
+            await createDatabaseClient();
+            return new Promise(function (resolve, reject) {
+                try {
+                    db_client
+                        .db(TECHNICAL_SERVICE_DB_NAME)
+                        .collection('Workflow')
+                        .findOne({ subsidiary: mongodb.ObjectId(subsidiaryId) },
+                            function (error, docs) {
+                                if (error) {
+                                    reject({
+                                        status: 500,
+                                        body: error,
+                                        headers: {
+                                            'Content-Type': 'application / json'
+                                        }
+                                    });
+                                    return;
+                                }
+                                if (!docs) {
+                                    resolve(null);
+                                }
+                                resolve(docs);
+                            }
+                        );
+                }
+                catch (error) {
+                    context.log(error);
+                    reject({
+                        status: 500,
+                        body: error.toString(),
+                        headers: {
+                            "Content-Type": "application/json"
+                        }
+                    })
+                }
+            });
+        }
+        async function searchStage(stageId) {
+            await createDatabaseClient();
+            return new Promise(function (resolve, reject) {
+                try {
+                    db_client
+                        .db(TECHNICAL_SERVICE_DB_NAME)
+                        .collection('Stage')
+                        .findOne({ _id: mongodb.ObjectId(stageId) },
+                            function (error, docs) {
+                                if (error) {
+                                    reject({
+                                        status: 500,
+                                        body: error,
+                                        headers: {
+                                            'Content-Type': 'application / json'
+                                        }
+                                    });
+                                    return;
+                                }
+                                if (!docs) {
+                                    resolve(null);
+                                }
+                                resolve(docs);
+                            }
+                        );
+                }
+                catch (error) {
+                    context.log(error);
+                    reject({
+                        status: 500,
+                        body: error.toString(),
+                        headers: {
+                            "Content-Type": "application/json"
+                        }
+                    })
                 }
             });
         }
