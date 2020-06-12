@@ -165,12 +165,12 @@ module.exports = function (context, req) {
         var originAgencyId = req.body['udn_origen'];
         var transportDriverId = req.body['operador_transporte'];
         var transportKindId = req.body['tipo_transporte']; //Non mandatory
+        let date = new Date();
 
         validate();
 
         try {
             await createDatabaseClient();
-            let date = new Date();
 
             let originAgency,
                 destinationSubsidiary,
@@ -215,7 +215,7 @@ module.exports = function (context, req) {
                     await createServices(fridges, createdEntry);
 
                     context.res = {
-                        status: 200,
+                        status: 201,
                         body: createdEntry,
                         headers: {
                             "Content-Type": "application/json"
@@ -778,11 +778,11 @@ module.exports = function (context, req) {
             });
         }
         async function createServices(fridges, entry) {
-            await createDatabaseClient();
-            return new Promise(function (resolve, reject) {
+            return new Promise(async function (resolve, reject) {
                 try {
-                    let servicesArray = [];
-                    fridges.forEach((fridge) => {
+                    await createDatabaseClient();
+                    var servicesArray = [];
+                    fridges.forEach(function(fridge) {
                         let service = {
                             fridge: fridge,
                             endDate: null,
@@ -790,13 +790,11 @@ module.exports = function (context, req) {
                             entry: entry,
                             changes: [],
                             stages: [],
-                            departure: null
+                            departure: null,
+                            actualFlow: null
                         };
                         servicesArray.push(service);
                     });
-                    // for(var i=0;i<fridges.length;i++){
-
-                    // }
                     db_client
                         .db(TECHNICAL_SERVICE_DB_NAME)
                         .collection('Service')
@@ -831,7 +829,10 @@ module.exports = function (context, req) {
     function createDatabaseClient() {
         return new Promise(function (resolve, reject) {
             if (!db_client) {
-                mongodb.MongoClient.connect(connection, function (error, _db_client) {
+                mongodb.MongoClient.connect(connection, {
+                    useNewUrlParser: true,
+                    useUnifiedTopology: true
+                }, function (error, _db_client) {
                     if (error) {
                         reject(error);
                     }
