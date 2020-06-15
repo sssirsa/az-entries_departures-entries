@@ -782,40 +782,48 @@ module.exports = function (context, req) {
                 try {
                     await createDatabaseClient();
                     //Initial service creation based on subsidiary workflow
-                    let workflow=await searchWorkflow(destinationSubsidiaryId);
-                    let initialStage= await searchStage(workflow.initial);
-                    let stages=[initialStage];
-                    let servicesArray = [];
-                    fridges.forEach(function(fridge) {
-                        let service = {
-                            fridge: fridge,
-                            endDate: null,
-                            startDate: date,
-                            entry: entryId,
-                            changes: [],
-                            stages: stages,
-                            departure: null,
-                            actualFlow: null
-                        };
-                        service.stages.push();
-                        servicesArray.push(service);
-                    });
-                    db_client
-                        .db(TECHNICAL_SERVICE_DB_NAME)
-                        .collection('Service')
-                        .insertMany(servicesArray, function (error, docs) {
-                            if (error) {
-                                reject({
-                                    status: 500,
-                                    body: error,
-                                    headers: {
-                                        'Content-Type': 'application / json'
-                                    }
-                                });
-                                return;
-                            }
-                            resolve(docs);
+                    let query;
+                    query = { subsidiary: mongodb.ObjectId(destinationSubsidiaryId) };
+                    let workflow = await searchWorkflow(query);
+                    if (workflow) {
+                        //Just create services if subsidiary has a workflow
+                        let initialStage = await searchStage(workflow.initial);
+                        let stages = [initialStage];
+                        let servicesArray = [];
+                        fridges.forEach(function (fridge) {
+                            let service = {
+                                fridge: fridge,
+                                endDate: null,
+                                startDate: date,
+                                entry: entryId,
+                                changes: [],
+                                stages: stages,
+                                departure: null,
+                                actualFlow: null
+                            };
+                            service.stages.push();
+                            servicesArray.push(service);
                         });
+                        db_client
+                            .db(TECHNICAL_SERVICE_DB_NAME)
+                            .collection('Service')
+                            .insertMany(servicesArray, function (error, docs) {
+                                if (error) {
+                                    reject({
+                                        status: 500,
+                                        body: error,
+                                        headers: {
+                                            'Content-Type': 'application / json'
+                                        }
+                                    });
+                                    return;
+                                }
+                                resolve(docs);
+                            });
+                    }
+                    else{
+                        resolve(null);
+                    }
                 }
                 catch (error) {
                     context.log(error);
@@ -829,14 +837,14 @@ module.exports = function (context, req) {
                 }
             });
         }
-        async function searchWorkflow(subsidiaryId) {
+        async function searchWorkflow(query) {
             await createDatabaseClient();
             return new Promise(function (resolve, reject) {
                 try {
                     db_client
                         .db(TECHNICAL_SERVICE_DB_NAME)
                         .collection('Workflow')
-                        .findOne({ subsidiary: mongodb.ObjectId(subsidiaryId) },
+                        .findOne(query,
                             function (error, docs) {
                                 if (error) {
                                     reject({
