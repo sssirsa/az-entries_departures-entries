@@ -783,7 +783,11 @@ module.exports = function (context, req) {
                     if (workflow) {
                         //Just create services if subsidiary has a workflow
                         let initialStage = await searchStage(workflow.initial);
-                        let stages = [initialStage];
+                        let stages = [
+                            {
+                                stage: initialStage
+                            }
+                        ];
                         let servicesArray = [];
                         fridges.forEach(function (fridge) {
                             let service = {
@@ -816,7 +820,7 @@ module.exports = function (context, req) {
                                 resolve(docs);
                             });
                     }
-                    else{
+                    else {
                         resolve(null);
                     }
                 }
