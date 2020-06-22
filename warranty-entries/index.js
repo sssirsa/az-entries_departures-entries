@@ -214,16 +214,15 @@ module.exports = function (context, req) {
                     let createdEntry = response.ops[0];
                     let services = await createServices(fridges, createdEntry._id);
 
-                    if (services) {
-                        context.res = {
-                            status: 201,
-                            body: createdEntry,
-                            headers: {
-                                "Content-Type": "application/json"
-                            }
+                    context.res = {
+                        status: 201,
+                        body: createdEntry,
+                        headers: {
+                            "Content-Type": "application/json"
                         }
-                        context.done();
                     }
+                    context.done();
+
                 })
                 .catch(function (error) {
                     context.res = error;
