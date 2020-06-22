@@ -809,14 +809,13 @@ module.exports = function (context, req) {
                             .collection('Service')
                             .insertMany(servicesArray, function (error, docs) {
                                 if (error) {
-                                    reject({
+                                    throw({
                                         status: 500,
                                         body: error,
                                         headers: {
                                             'Content-Type': 'application / json'
                                         }
                                     });
-                                    return;
                                 }
                                 resolve(docs);
                             });
