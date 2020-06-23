@@ -244,7 +244,7 @@ module.exports = function (context, req) {
                 context.res = {
                     status: 400,
                     body: {
-                        message: 'ES-002'
+                        code: 'ES-002'
                     },
                     headers: {
                         'Content-Type': 'application / json'
@@ -257,7 +257,7 @@ module.exports = function (context, req) {
                 context.res = {
                     status: 400,
                     body: {
-                        message: 'ES-001'
+                        code: 'ES-001'
                     },
                     headers: {
                         'Content-Type': 'application / json'
@@ -272,7 +272,7 @@ module.exports = function (context, req) {
                 context.res = {
                     status: 400,
                     body: {
-                        message: 'ES-060'
+                        code: 'ES-060'
                     },
                     headers: {
                         'Content-Type': 'application / json'
@@ -287,7 +287,7 @@ module.exports = function (context, req) {
                 context.res = {
                     status: 400,
                     body: {
-                        message: 'ES-003'
+                        code: 'ES-003'
                     },
                     headers: {
                         'Content-Type': 'application / json'
@@ -300,7 +300,7 @@ module.exports = function (context, req) {
                 context.res = {
                     status: 400,
                     body: {
-                        message: 'ES-003'
+                        code: 'ES-003'
                     },
                     headers: {
                         'Content-Type': 'application / json'
@@ -314,7 +314,7 @@ module.exports = function (context, req) {
                 context.res = {
                     status: 400,
                     body: {
-                        message: 'ES-047'
+                        code: 'ES-047'
                     },
                     headers: {
                         'Content-Type': 'application / json'
@@ -326,7 +326,7 @@ module.exports = function (context, req) {
                 context.res = {
                     status: 400,
                     body: {
-                        message: 'ES-048'
+                        code: 'ES-048'
                     },
                     headers: {
                         'Content-Type': 'application / json'
@@ -360,7 +360,7 @@ module.exports = function (context, req) {
                                     reject({
                                         status: 400,
                                         body: {
-                                            message: 'ES-045'
+                                            code: 'ES-045'
                                         },
                                         headers: {
                                             'Content-Type': 'application / json'
@@ -428,7 +428,7 @@ module.exports = function (context, req) {
                                     reject({
                                         status: 400,
                                         body: {
-                                            message: 'ES-046'
+                                            code: 'ES-046'
                                         },
                                         headers: {
                                             'Content-Type': 'application / json'
@@ -441,7 +441,7 @@ module.exports = function (context, req) {
                                     err = {
                                         status: 400,
                                         body: {
-                                            message: 'ES-005'
+                                            code: 'ES-005'
                                         },
                                         headers: {
                                             'Content-Type': 'application / json'
@@ -458,7 +458,7 @@ module.exports = function (context, req) {
                                     err = {
                                         status: 400,
                                         body: {
-                                            message: 'ES-006'
+                                            code: 'ES-006'
                                         },
                                         headers: {
                                             'Content-Type': 'application / json'
@@ -474,7 +474,7 @@ module.exports = function (context, req) {
                                         err = {
                                             status: 400,
                                             body: {
-                                                message: 'ES-007'
+                                                code: 'ES-007'
                                             },
                                             headers: {
                                                 'Content-Type': 'application / json'
@@ -489,7 +489,7 @@ module.exports = function (context, req) {
                                 //     reject({
                                 //         status: 400,
                                 //         body: {
-                                //             message: 'ES-059'
+                                //             code: 'ES-059'
                                 //         },
                                 //         headers: {
                                 //             'Content-Type': 'application / json'
@@ -537,7 +537,7 @@ module.exports = function (context, req) {
                                     reject({
                                         status: 400,
                                         body: {
-                                            message: 'ES-043'
+                                            code: 'ES-043'
                                         },
                                         headers: {
                                             'Content-Type': 'application / json'
@@ -569,7 +569,7 @@ module.exports = function (context, req) {
                         reject({
                             status: 400,
                             body: {
-                                message: 'ES-049'
+                                code: 'ES-049'
                             },
                             headers: {
                                 'Content-Type': 'application / json'
@@ -599,7 +599,7 @@ module.exports = function (context, req) {
                         reject({
                             status: 400,
                             body: {
-                                message: 'ES-050'
+                                code: 'ES-050'
                             },
                             headers: {
                                 'Content-Type': 'application / json'
@@ -644,7 +644,7 @@ module.exports = function (context, req) {
                                     reject({
                                         status: 400,
                                         body: {
-                                            message: 'MG-016'
+                                            code: 'MG-016'
                                         },
                                         headers: {
                                             'Content-Type': 'application / json'
