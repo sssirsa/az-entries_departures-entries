@@ -20,22 +20,11 @@ module.exports = function (context, req) {
             notAllowed();
             break;
     }
-
-    function notAllowed() {
-        context.res = {
-            status: 405,
-            body: "Method not allowed",
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        };
-        context.done();
-    }
-
+    
     //Create entry
     function POST_entry() {
         //TODO: Get person data trough userid and save it in the entry data
-        var userId = null;
+        var userId = req.body['persona'];
         var entry; //Base object
         var originProviderId = req.body['proveedor_origen'];
         var destinationAgencyId = req.body['udn_destino'];
@@ -80,7 +69,7 @@ module.exports = function (context, req) {
                             proveedor_origen: fridgeBrand,
                             nombre_chofer: req.body.nombre_chofer,
                             pedimento: req.body.pedimento,
-                            persona: req.body.persona,
+                            persona: userId,
                             udn_destino: destinationAgency,
                             sucursal_destino: destinationSubsidiary,
                             operador_transporte: transportDriver,
@@ -201,6 +190,18 @@ module.exports = function (context, req) {
                     status: 400,
                     body: {
                         code: 'ES-048'
+                    },
+                    headers: {
+                        'Content-Type': 'application / json'
+                    }
+                };
+                context.done();
+            }
+            if (!userId) {
+                context.res= {
+                    status: 401,
+                    body: {
+                        message: 'The userId parameter is mandatory'
                     },
                     headers: {
                         'Content-Type': 'application / json'
@@ -740,6 +741,17 @@ module.exports = function (context, req) {
                     );
             });
         }
+    }
+
+    function notAllowed() {
+        context.res = {
+            status: 405,
+            body: "Method not allowed",
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        };
+        context.done();
     }
 
     //Internal global functions

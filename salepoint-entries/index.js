@@ -35,7 +35,7 @@ module.exports = function (context, req) {
     //Create entry
     function POST_entry() {
         //TODO: Get person data trough userid and save it in the entry data
-        var userId = null;
+        var userId = req.body['persona'];
         var destinationAgencyId = req.body['udn_destino'];
         var destinationSubsidiaryId = req.body['sucursal_destino'];
         var transportDriverId = req.body['operador_transporte'];
@@ -75,7 +75,7 @@ module.exports = function (context, req) {
                             fecha_hora: date,
                             tipo_entrada: entry_kind,
                             nombre_chofer: req.body.nombre_chofer,
-                            persona: req.body.persona,
+                            persona: userId,
                             udn_destino: destinationAgency,
                             sucursal_destino: destinationSubsidiary,
                             operador_transporte: transportDriver,
@@ -193,6 +193,18 @@ module.exports = function (context, req) {
                     status: 400,
                     body: {
                         code: 'ES-048'
+                    },
+                    headers: {
+                        'Content-Type': 'application / json'
+                    }
+                };
+                context.done();
+            }
+            if (!userId) {
+                context.res= {
+                    status: 401,
+                    body: {
+                        message: 'The userId parameter is mandatory'
                     },
                     headers: {
                         'Content-Type': 'application / json'
