@@ -13,9 +13,6 @@ const entries_departures = process.env["ENTRIES_DEPARTURES"];
 
 module.exports = function (context, req) {
     switch (req.method) {
-        case "GET":
-            GET_entries();
-            break;
         case "POST":
             POST_entry();
             break;
@@ -741,91 +738,6 @@ module.exports = function (context, req) {
                             resolve(docs);
                         }
                     );
-            });
-        }
-    }
-    //Get entries
-    async function GET_entries() {
-        //TODO: Add filter for returning just the NEW FRIDGES entries
-        var requestedID;
-        if (req.query) {
-            requestedID = req.query["id"];
-        }
-        try {
-            if (requestedID) {
-                //Get specific entry
-                let entry = await getEntry(requestedID);
-                context.res = {
-                    status: 200,
-                    body: entry,
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                };
-                context.done();
-            }
-
-            else {
-                //Get entries list
-                let entries = getEntries({ tipo_entrada: entry_kind });
-                context.res = {
-                    body: entries,
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                };
-                context.done();
-            }
-        }
-        catch (error) {
-            context.res = error;
-            context.done();
-        }
-
-        //Internal functions
-        async function getEntry(entryId) {
-            await createEntriesDeparturesClient();
-            return new Promise(function (resolve, reject) {
-                entries_departures_client
-                    .db(ENTRIES_DEPARTURES_DB_NAME)
-                    .collection('Entries')
-                    .findOne({ _id: mongodb.ObjectId(entryId) },
-                        function (error, docs) {
-                            if (error) {
-                                reject({
-                                    status: 500,
-                                    body: error.toString(),
-                                    headers: {
-                                        "Content-Type": "application/json"
-                                    }
-                                });
-                            }
-                            resolve(docs);
-                        }
-                    );
-            });
-        }
-
-        async function getEntries(query) {
-            await createEntriesDeparturesClient();
-            return new Promise(function (resolve, reject) {
-                entries_departures_client
-                    .db(ENTRIES_DEPARTURES_DB_NAME)
-                    .collection('Entries')
-                    .find(query)
-                    .sort({ fecha_hora: -1 })
-                    .toArray(function (error, docs) {
-                        if (error) {
-                            reject({
-                                status: 500,
-                                body: error,
-                                headers: {
-                                    "Content-Type": "application/json"
-                                }
-                            });
-                        }
-                        resolve(docs)
-                    });
             });
         }
     }
