@@ -2,12 +2,11 @@ const mongodb = require('mongodb');
 const axios = require('axios');
 const entry_kind = "Garantías";
 //db connections
-let management_client = null;
-let entries_departures_client = null;
-const connection_Management = process.env["connection_Management"];
-const connection_EntriesDepartures = process.env["connection_EntriesDepartures"];
-const MANAGEMENT_DB_NAME = process.env['MANAGEMENT_DB_NAME'];
+let db_client = null;
+const connection = process.env["connection"];
 const ENTRIES_DEPARTURES_DB_NAME = process.env['ENTRIES_DEPARTURES_DB_NAME'];
+const MANAGEMENT_DB_NAME = process.env['MANAGEMENT_DB_NAME'];
+const TECHNICAL_SERVICE_DB_NAME = process.env['TECHNICAL_SERVICE_DB_NAME'];
 
 //URLS
 const entries_departures = process.env["ENTRIES_DEPARTURES"];
@@ -72,10 +71,10 @@ module.exports = function (context, req) {
 
         //Internal functions
         async function getEntry(id) {
-            await createEntriesDeparturesClient();
+            await createDatabaseClient();
             return new Promise(function (resolve, reject) {
                 try {
-                    entries_departures_client
+                    db_client
                         .db(ENTRIES_DEPARTURES_DB_NAME)
                         .collection('Entries')
                         .findOne({ _id: mongodb.ObjectId(id) },
@@ -122,10 +121,10 @@ module.exports = function (context, req) {
             let query = {
                 tipo_entrada: entry_kind
             };
-            await createEntriesDeparturesClient();
+            await createDatabaseClient();
             return new Promise(function (resolve, reject) {
                 try {
-                    entries_departures_client
+                    db_client
                         .db(ENTRIES_DEPARTURES_DB_NAME)
                         .collection('Entries')
                         .find(query)
@@ -166,10 +165,13 @@ module.exports = function (context, req) {
         var originAgencyId = req.body['udn_origen'];
         var transportDriverId = req.body['operador_transporte'];
         var transportKindId = req.body['tipo_transporte']; //Non mandatory
+        let date = new Date();
 
         validate();
 
         try {
+            await createDatabaseClient();
+
             let originAgency,
                 destinationSubsidiary,
                 transportDriver,
@@ -192,7 +194,6 @@ module.exports = function (context, req) {
 
             Promise.all(precedentPromises)
                 .then(async function () {
-                    let date = new Date();
 
                     // Create a entry base object.
                     entry = {
@@ -209,17 +210,19 @@ module.exports = function (context, req) {
                     };
 
                     let response = await writeEntry();
-                    //await createAllControl(response.ops[0]);
                     await updateFridges(entry);
+                    let createdEntry = response.ops[0];
+                    let services = await createServices(fridges, createdEntry._id);
 
                     context.res = {
-                        status: 200,
-                        body: response.ops[0],
+                        status: 201,
+                        body: createdEntry,
                         headers: {
                             "Content-Type": "application/json"
                         }
                     }
                     context.done();
+
                 })
                 .catch(function (error) {
                     context.res = error;
@@ -317,10 +320,10 @@ module.exports = function (context, req) {
         }
 
         async function searchAgency(agencyId) {
-            await createMongoClient();
+            await createDatabaseClient();
             return new Promise(function (resolve, reject) {
                 try {
-                    management_client
+                    db_client
                         .db(MANAGEMENT_DB_NAME)
                         .collection('agencies')
                         .findOne({ _id: mongodb.ObjectId(agencyId) },
@@ -383,13 +386,22 @@ module.exports = function (context, req) {
             });
         }
         async function searchFridge(fridgeInventoryNumber) {
-            await createMongoClient();
+            await createDatabaseClient();
             return new Promise(function (resolve, reject) {
                 try {
-                    management_client
+                    db_client
                         .db(MANAGEMENT_DB_NAME)
                         .collection('fridges')
                         .findOne({ economico: fridgeInventoryNumber },
+                            {
+                                _id: 1,
+                                economico: 1,
+                                no_serie: 1,
+                                modelo: 1,
+                                sucursal: 1,
+                                udn: 1,
+                                estatus_unilever: 1
+                            },
                             function (error, docs) {
                                 if (error) {
                                     reject({
@@ -495,10 +507,10 @@ module.exports = function (context, req) {
             });
         }
         async function searchSubsidiary(subsidiaryId) {
-            await createMongoClient();
+            await createDatabaseClient();
             return new Promise(function (resolve, reject) {
                 try {
-                    management_client
+                    db_client
                         .db(MANAGEMENT_DB_NAME)
                         .collection('subsidiaries')
                         .findOne({ _id: mongodb.ObjectId(subsidiaryId) },
@@ -602,10 +614,10 @@ module.exports = function (context, req) {
 
         }
         async function searchUnileverStatus(code) {
-            await createMongoClient();
+            await createDatabaseClient();
             return new Promise(function (resolve, reject) {
                 try {
-                    management_client
+                    db_client
                         .db(MANAGEMENT_DB_NAME)
                         .collection('unilevers')
                         .findOne({ code: code },
@@ -648,10 +660,10 @@ module.exports = function (context, req) {
             });
         }
         async function writeEntry() {
-            await createEntriesDeparturesClient();
+            await createDatabaseClient();
             return new Promise(function (resolve, reject) {
                 try {
-                    entries_departures_client
+                    db_client
                         .db(ENTRIES_DEPARTURES_DB_NAME)
                         .collection('Entries')
                         .insertOne(entry, function (error, docs) {
@@ -666,81 +678,6 @@ module.exports = function (context, req) {
                                 return;
                             }
                             resolve(docs);
-                        });
-                }
-                catch (error) {
-                    reject({
-                        status: 500,
-                        body: error,
-                        headers: {
-                            'Content-Type': 'application / json'
-                        }
-                    });
-                }
-            });
-        }
-        async function createAllControl(entry) {
-            return new Promise(async function (resolve, reject) {
-                var fridgesControlPromises = [];
-                for (var i = 0; i < entry.cabinets.length; i++) {
-                    element = {
-                        tipo_entrada: "Buen estado",
-                        cabinet_id: entry.cabinets[i].economico,
-                        entrada_id: entry['_id'],
-                        impedimento_id: null,
-                        servicio_id: null,
-                        sucursal_id: destinationSubsidiaryId
-                    };
-                    fridgesControlPromises.push(
-                        createControl(element)
-                    );
-                }
-                try {
-                    let fridgesArray = await Promise.all(fridgesControlPromises);
-
-                    resolve(fridgesArray);
-                }
-                catch (error) {
-                    reject({
-                        status: 500,
-                        body: error,
-                        headers: {
-                            'Content-Type': 'application / json'
-                        }
-                    });
-                }
-            });
-        }
-        async function createControl(control) {
-            await createEntriesDeparturesClient();
-            return new Promise(function (resolve, reject) {
-                try {
-                    entries_departures_client
-                        .db(ENTRIES_DEPARTURES_DB_NAME)
-                        .collection('Control')
-                        .insertOne(control, function (error, docs) {
-                            if (error) {
-                                reject({
-                                    status: 500,
-                                    body: error,
-                                    headers: {
-                                        'Content-Type': 'application / json'
-                                    }
-                                });
-                                return;
-                            }
-                            if (!docs) {
-                                reject({
-                                    status: 500,
-                                    body: 'Error at creating control  ',
-                                    headers: {
-                                        'Content-Type': 'application / json'
-                                    }
-                                });
-                            }
-                            if (docs) {
-                                resolve(docs);
-                            }
                         });
                 }
                 catch (error) {
@@ -800,10 +737,10 @@ module.exports = function (context, req) {
             });
         }
         async function updateFridge(newValues, fridgeId) {
-            await createMongoClient();
+            await createDatabaseClient();
             return new Promise(function (resolve, reject) {
                 try {
-                    management_client
+                    db_client
                         .db(MANAGEMENT_DB_NAME)
                         .collection('fridges')
                         .updateOne(
@@ -836,34 +773,159 @@ module.exports = function (context, req) {
                 }
             });
         }
+        async function createServices(fridges, entryId) {
+            return new Promise(async function (resolve, reject) {
+                try {
+                    await createDatabaseClient();
+                    //Initial service creation based on subsidiary workflow
+                    let query;
+                    query = { subsidiary: mongodb.ObjectId(destinationSubsidiaryId) };
+                    let workflow = await searchWorkflow(query);
+                    if (workflow) {
+                        //Just create services if subsidiary has a workflow
+                        let initialStage = await searchStage(workflow.initial);
+                        let stages = [
+                            {
+                                stage: initialStage
+                            }
+                        ];
+                        let servicesArray = [];
+                        fridges.forEach(function (fridge) {
+                            let service = {
+                                fridge: fridge,
+                                endDate: null,
+                                startDate: date,
+                                entry: entryId,
+                                changes: [],
+                                stages: stages,
+                                departure: null,
+                                actualFlow: null
+                            };
+                            service.stages.push();
+                            servicesArray.push(service);
+                        });
+                        db_client
+                            .db(TECHNICAL_SERVICE_DB_NAME)
+                            .collection('Service')
+                            .insertMany(servicesArray, function (error, docs) {
+                                if (error) {
+                                    throw({
+                                        status: 500,
+                                        body: error,
+                                        headers: {
+                                            'Content-Type': 'application / json'
+                                        }
+                                    });
+                                }
+                                resolve(docs);
+                            });
+                    }
+                    else {
+                        resolve(null);
+                    }
+                }
+                catch (error) {
+                    context.log(error);
+                    reject({
+                        status: 500,
+                        body: error,
+                        headers: {
+                            'Content-Type': 'application / json'
+                        }
+                    });
+                }
+            });
+        }
+        async function searchWorkflow(query) {
+            await createDatabaseClient();
+            return new Promise(function (resolve, reject) {
+                try {
+                    db_client
+                        .db(TECHNICAL_SERVICE_DB_NAME)
+                        .collection('Workflow')
+                        .findOne(query,
+                            function (error, docs) {
+                                if (error) {
+                                    reject({
+                                        status: 500,
+                                        body: error,
+                                        headers: {
+                                            'Content-Type': 'application / json'
+                                        }
+                                    });
+                                    return;
+                                }
+                                if (!docs) {
+                                    resolve(null);
+                                }
+                                resolve(docs);
+                            }
+                        );
+                }
+                catch (error) {
+                    context.log(error);
+                    reject({
+                        status: 500,
+                        body: error.toString(),
+                        headers: {
+                            "Content-Type": "application/json"
+                        }
+                    })
+                }
+            });
+        }
+        async function searchStage(stageId) {
+            await createDatabaseClient();
+            return new Promise(function (resolve, reject) {
+                try {
+                    db_client
+                        .db(TECHNICAL_SERVICE_DB_NAME)
+                        .collection('Stage')
+                        .findOne({ _id: mongodb.ObjectId(stageId) },
+                            function (error, docs) {
+                                if (error) {
+                                    reject({
+                                        status: 500,
+                                        body: error,
+                                        headers: {
+                                            'Content-Type': 'application / json'
+                                        }
+                                    });
+                                    return;
+                                }
+                                if (!docs) {
+                                    resolve(null);
+                                }
+                                resolve(docs);
+                            }
+                        );
+                }
+                catch (error) {
+                    context.log(error);
+                    reject({
+                        status: 500,
+                        body: error.toString(),
+                        headers: {
+                            "Content-Type": "application/json"
+                        }
+                    })
+                }
+            });
+        }
     }
 
 
-    function createEntriesDeparturesClient() {
+    function createDatabaseClient() {
         return new Promise(function (resolve, reject) {
-            if (!entries_departures_client) {
-                mongodb.MongoClient.connect(connection_EntriesDepartures, function (error, _entries_departures_client) {
+            if (!db_client) {
+                mongodb.MongoClient.connect(connection, {
+                    useNewUrlParser: true,
+                    useUnifiedTopology: true
+                }, function (error, _db_client) {
                     if (error) {
                         reject(error);
                     }
-                    entries_departures_client = _entries_departures_client;
-                    resolve();
-                });
-            }
-            else {
-                resolve();
-            }
-        });
-    }
-
-    function createMongoClient() {
-        return new Promise(function (resolve, reject) {
-            if (!management_client) {
-                mongodb.MongoClient.connect(connection_Management, function (error, _management_client) {
-                    if (error) {
-                        reject(error);
-                    }
-                    management_client = _management_client;
+                    db_client = _db_client;
                     resolve();
                 });
             }
