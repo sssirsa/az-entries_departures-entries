@@ -212,7 +212,7 @@ module.exports = function (context, req) {
                     let response = await writeEntry();
                     await updateFridges(entry);
                     let createdEntry = response.ops[0];
-                    let services = await createServices(fridges, createdEntry._id);
+                    let services = await createServices(fridges, createdEntry);
 
                     context.res = {
                         status: 201,
@@ -773,14 +773,26 @@ module.exports = function (context, req) {
                 }
             });
         }
-        async function createServices(fridges, entryId) {
+        async function createServices(fridges, entry) {
             return new Promise(async function (resolve, reject) {
                 try {
                     await createDatabaseClient();
                     //Initial service creation based on subsidiary workflow
-                    let query;
+                    let query, subsidiary, agency;
                     query = { subsidiary: mongodb.ObjectId(destinationSubsidiaryId) };
                     let workflow = await searchWorkflow(query);
+
+                    if (entry.sucursal_destino) {
+                        subsidiary = {};
+                        subsidiary['_id'] = entry['sucursal_destino']._id;
+                        subsidiary['nombre'] = entry['sucursal_destino'].nombre;
+                    }
+                    if (entry.udn_destino) {
+                        agency = {};
+                        agency['_id'] = entry['udn_destino']._id;
+                        agency['nombre'] = entry['udn_destino'].nombre;
+
+                    }
                     if (workflow) {
                         //Just create services if subsidiary has a workflow
                         let initialStage = await searchStage(workflow.initial);
@@ -795,11 +807,14 @@ module.exports = function (context, req) {
                                 fridge: fridge,
                                 endDate: null,
                                 startDate: date,
-                                entry: entryId,
+                                entry: entry._id,
                                 changes: [],
                                 stages: stages,
                                 departure: null,
-                                actualFlow: null
+                                actualFlow: null,
+                                subsidiary: subsidiary,
+                                agency:agency,
+                                agency: null
                             };
                             service.stages.push();
                             servicesArray.push(service);
@@ -809,7 +824,7 @@ module.exports = function (context, req) {
                             .collection('Service')
                             .insertMany(servicesArray, function (error, docs) {
                                 if (error) {
-                                    throw({
+                                    throw ({
                                         status: 500,
                                         body: error,
                                         headers: {
