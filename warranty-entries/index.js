@@ -212,7 +212,7 @@ module.exports = function (context, req) {
                     let response = await writeEntry();
                     await updateFridges(entry);
                     let createdEntry = response.ops[0];
-                    let services = await createServices(fridges, createdEntry._id);
+                    let services = await createServices(fridges, createdEntry);
 
                     context.res = {
                         status: 201,
@@ -773,7 +773,7 @@ module.exports = function (context, req) {
                 }
             });
         }
-        async function createServices(fridges, entryId) {
+        async function createServices(fridges, entry) {
             return new Promise(async function (resolve, reject) {
                 try {
                     await createDatabaseClient();
@@ -795,11 +795,13 @@ module.exports = function (context, req) {
                                 fridge: fridge,
                                 endDate: null,
                                 startDate: date,
-                                entry: entryId,
+                                entry: entry._id,
                                 changes: [],
                                 stages: stages,
                                 departure: null,
-                                actualFlow: null
+                                actualFlow: null,
+                                subsidiary:destinationSubsidiaryId,
+                                agency:null
                             };
                             service.stages.push();
                             servicesArray.push(service);
