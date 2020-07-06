@@ -800,8 +800,8 @@ module.exports = function (context, req) {
                                 stages: stages,
                                 departure: null,
                                 actualFlow: null,
-                                subsidiary:destinationSubsidiaryId,
-                                agency:null
+                                subsidiary: mongodb.ObjectId(destinationSubsidiaryId),
+                                agency: null
                             };
                             service.stages.push();
                             servicesArray.push(service);
@@ -811,7 +811,7 @@ module.exports = function (context, req) {
                             .collection('Service')
                             .insertMany(servicesArray, function (error, docs) {
                                 if (error) {
-                                    throw({
+                                    throw ({
                                         status: 500,
                                         body: error,
                                         headers: {
