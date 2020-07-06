@@ -778,8 +778,12 @@ module.exports = function (context, req) {
                 try {
                     await createDatabaseClient();
                     //Initial service creation based on subsidiary workflow
-                    let query, subsidiary, agency;
+                    let query, subsidiary, agency, simplifiedEntry;
                     query = { subsidiary: mongodb.ObjectId(destinationSubsidiaryId) };
+                    simplifiedEntry ={
+                        _id:entry['_id'],
+                        udn_origen:entry['udn_origen']
+                    };
                     let workflow = await searchWorkflow(query);
 
                     if (entry.sucursal_destino) {
@@ -807,7 +811,7 @@ module.exports = function (context, req) {
                                 fridge: fridge,
                                 endDate: null,
                                 startDate: date,
-                                entry: entry._id,
+                                entry: simplifiedEntry,
                                 changes: [],
                                 stages: stages,
                                 departure: null,
