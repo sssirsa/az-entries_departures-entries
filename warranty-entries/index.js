@@ -817,8 +817,7 @@ module.exports = function (context, req) {
                                 departure: null,
                                 actualFlow: null,
                                 subsidiary: subsidiary,
-                                agency:agency,
-                                agency: null
+                                agency:agency
                             };
                             service.stages.push();
                             servicesArray.push(service);
