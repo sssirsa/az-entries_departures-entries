@@ -178,10 +178,10 @@ module.exports = function (context, req) {
                 destinationSubsidiary,
                 transportDriver,
                 transportKind;
-            if (originAgencyId) {
-                originAgency = await searchAgency(originProviderId);
-            }
             if (originProviderId) {
+                originAgency = await searchProvider(originProviderId);
+            }
+            if (originAgencyId) {
                 originProvider = await searchAgency(originAgencyId);
             }
             if (destinationSubsidiaryId) {
@@ -195,7 +195,7 @@ module.exports = function (context, req) {
             }
             let fridges = await searchAllFridges(req.body['cabinets']);
 
-            let precedentPromises = [originAgency, destinationSubsidiary, transportDriver, transportKind, fridges];
+            let precedentPromises = [originAgency, originProvider, destinationSubsidiary, transportDriver, transportKind, fridges];
 
             Promise.all(precedentPromises)
                 .then(async function () {
@@ -378,7 +378,7 @@ module.exports = function (context, req) {
                     db_client
                         .db(MANAGEMENT_DB_NAME)
                         .collection('fridgebrands')
-                        .findOne({ _id: mongodb.ObjectId(agencyId) },
+                        .findOne({ _id: mongodb.ObjectId(providerId) },
                             function (error, docs) {
                                 if (error) {
                                     reject({
