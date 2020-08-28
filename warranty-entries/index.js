@@ -163,6 +163,7 @@ module.exports = function (context, req) {
         var userId = null;
         var destinationSubsidiaryId = req.body['sucursal_destino'];
         var originAgencyId = req.body['udn_origen'];
+        var originProviderId = req.body['proveedor_origen'];
         var transportDriverId = req.body['operador_transporte'];
         var transportKindId = req.body['tipo_transporte']; //Non mandatory
         let date = new Date();
@@ -173,11 +174,15 @@ module.exports = function (context, req) {
             await createDatabaseClient();
 
             let originAgency,
+                originProvider,
                 destinationSubsidiary,
                 transportDriver,
                 transportKind;
+            if (originProviderId) {
+                originAgency = await searchProvider(originProviderId);
+            }
             if (originAgencyId) {
-                originAgency = await searchAgency(originAgencyId);
+                originProvider = await searchAgency(originAgencyId);
             }
             if (destinationSubsidiaryId) {
                 destinationSubsidiary = await searchSubsidiary(destinationSubsidiaryId);
@@ -190,7 +195,7 @@ module.exports = function (context, req) {
             }
             let fridges = await searchAllFridges(req.body['cabinets']);
 
-            let precedentPromises = [originAgency, destinationSubsidiary, transportDriver, transportKind, fridges];
+            let precedentPromises = [originAgency, originProvider, destinationSubsidiary, transportDriver, transportKind, fridges];
 
             Promise.all(precedentPromises)
                 .then(async function () {
@@ -203,6 +208,7 @@ module.exports = function (context, req) {
                         nombre_chofer: req.body.nombre_chofer,
                         persona: req.body.persona,
                         udn_origen: originAgency,
+                        proveedor_origen: originProvider,
                         sucursal_destino: destinationSubsidiary,
                         tipo_transporte: transportKind,
                         operador_transporte: transportDriver,
@@ -238,7 +244,7 @@ module.exports = function (context, req) {
         //Internal functions
         function validate() {
             //Origin validation
-            if (!originAgencyId) {
+            if (!originAgencyId && !originProviderId) {
                 //at least one
                 context.res = {
                     status: 400,
@@ -327,6 +333,52 @@ module.exports = function (context, req) {
                         .db(MANAGEMENT_DB_NAME)
                         .collection('agencies')
                         .findOne({ _id: mongodb.ObjectId(agencyId) },
+                            function (error, docs) {
+                                if (error) {
+                                    reject({
+                                        status: 500,
+                                        body: error,
+                                        headers: {
+                                            'Content-Type': 'application / json'
+                                        }
+                                    });
+                                    return;
+                                }
+                                if (!docs) {
+                                    reject({
+                                        status: 400,
+                                        body: {
+                                            message: 'ES-045'
+                                        },
+                                        headers: {
+                                            'Content-Type': 'application / json'
+                                        }
+                                    });
+                                }
+                                resolve(docs);
+                            }
+                        );
+                }
+                catch (error) {
+                    context.log(error);
+                    reject({
+                        status: 500,
+                        body: error.toString(),
+                        headers: {
+                            "Content-Type": "application/json"
+                        }
+                    })
+                }
+            });
+        }
+        async function searchProvider(providerId) {
+            await createDatabaseClient();
+            return new Promise(function (resolve, reject) {
+                try {
+                    db_client
+                        .db(MANAGEMENT_DB_NAME)
+                        .collection('fridgebrands')
+                        .findOne({ _id: mongodb.ObjectId(providerId) },
                             function (error, docs) {
                                 if (error) {
                                     reject({
@@ -780,9 +832,9 @@ module.exports = function (context, req) {
                     //Initial service creation based on subsidiary workflow
                     let query, subsidiary, agency, simplifiedEntry;
                     query = { subsidiary: mongodb.ObjectId(destinationSubsidiaryId) };
-                    simplifiedEntry ={
-                        _id:entry['_id'],
-                        udn_origen:entry['udn_origen']
+                    simplifiedEntry = {
+                        _id: entry['_id'],
+                        udn_origen: entry['udn_origen']
                     };
                     let workflow = await searchWorkflow(query);
 
@@ -817,8 +869,7 @@ module.exports = function (context, req) {
                                 departure: null,
                                 actualFlow: null,
                                 subsidiary: subsidiary,
-                                agency:agency,
-                                agency: null
+                                agency: agency
                             };
                             service.stages.push();
                             servicesArray.push(service);
